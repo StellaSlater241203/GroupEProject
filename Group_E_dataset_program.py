@@ -108,5 +108,3 @@ for i in range (0,20):
         
     canvas.pack() #add canvas to window and show
     root.mainloop()
-
-    print("testing")
