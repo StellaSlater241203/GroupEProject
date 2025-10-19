@@ -74,12 +74,12 @@ def create_random(rEyeX, rEyeY, lEyeX, lEyeY, noseX, noseY, mouthX, mouthY):
     canvas.create_arc((mouthX-16), mouthY, (mouthX+16), (mouthY+18), start=0, extent=-180)
 #still messing about with this function so please leave all the commented out code untouched :)
 
-def rotate_shape(points, angleDeg, cx, cy):
-    a = math.radians(angleDeg)
+def rotate_shape(points, angleDeg, cx, cy): #rotation function, uses 2d rotation matrix, parameters taken in are the original points of the shape, the angle it needs to be rotated to, and the centre points of rotation
+    a = math.radians(angleDeg) #inputted angle to radians
     cosa = math.cos(a)
-    sina = math.sin(a)
-    out = []
-    for i in range(0, len(points), 2):
+    sina = math.sin(a) #sin and cos of the angle
+    out = [] #creates a tuple to return
+    for i in range(0, len(points), 2): #for loop to go through the 
         print(points[i])
         print(points[i+1])
         x = points[i] - cx
