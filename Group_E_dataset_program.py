@@ -40,7 +40,7 @@ def allowed_positions(rEyeX, rEyeY, lEyeX, lEyeY, noseX, noseY, mouthX, mouthY):
         check = random.randint(0,100)
         checksList.append(check)
         
-    generate_features(rEyeX, rEyeYinvert, lEyeX, lEyeYinvert, noseX, noseYinvert, mouthX, mouthYinvert, checksList)
+    generate_features(rEyeX, rEyeYinvert, lEyeX, lEyeYinvert, noseX, noseYinvert, mouthX, mouthYinvert, checksList) #pass all the coordinates to the feature generation function along with the list of random checks for feature shapes
 
 
 
@@ -87,46 +87,69 @@ def rotate_shape(points, angleDeg, cx, cy): #rotation function, uses 2d rotation
 
 
 def generate_features(rEyeX, rEyeY, lEyeX, lEyeY, noseX, noseY, mouthX, mouthY, checksList):
-    #eyeCoords = [rEyeX, rEyeY, lEyeX, lEyeY]
 
-    #for i in range(0,1):
+    
+    eyeCoords = [rEyeX, rEyeY, lEyeX, lEyeY] #list of eye coordinates to make looping easier, and to pass into the function
+    generate_eye_shapes(eyeCoords, checksList)
 
-    if checksList[0] <= 60: #weighting for different a different eye shape
-        rShapeCheck = random.randint(1,8)
-        if rShapeCheck == 1:
-            canvas.create_oval((rEyeX-9), (rEyeY+9), (rEyeX+9), (rEyeY-9)) #circle
-            print("circle")
-        if rShapeCheck == 2:
-            canvas.create_polygon((rEyeX-9), (rEyeY+9), (rEyeX-9), (rEyeY-9), (rEyeX+9), (rEyeY-9), (rEyeX+9), (rEyeY+9), outline="black", fill="") #square
-            print("square")
-        if rShapeCheck == 3:
-            canvas.create_polygon((rEyeX-12), (rEyeY+6), (rEyeX-12), (rEyeY-6), (rEyeX+12), (rEyeY-6), (rEyeX+12), (rEyeY+6), outline="black", fill="") #rectangle
-            print("rectangle")
-        if rShapeCheck == 4:
-            #canvas.create_polygon() this'll be the heart when i can work out how to make one <3 heart
-            print("heart")
-            canvas.create_oval((rEyeX-12), (rEyeY+6), (rEyeX+12), (rEyeY-6))
-        if rShapeCheck == 5:
-            canvas.create_polygon(rEyeX, (rEyeY-9), (rEyeX+2), (rEyeY-3), (rEyeX+9), (rEyeY-3), (rEyeX+3), (rEyeY+1), (rEyeX+5), (rEyeY+7), rEyeX, (rEyeY+4), (rEyeX-5), (rEyeY+7), (rEyeX-3), (rEyeY+1), (rEyeX-9), (rEyeY-3), (rEyeX-2), (rEyeY-3), outline="black", fill="") #star
-            print("star")
-        if rShapeCheck == 6:
-            canvas.create_arc((rEyeX-12), (rEyeY-12), (rEyeX+12), (rEyeY+12), start=0, extent=-180) #semi circle
-            print("semi circle")
-        if rShapeCheck == 7:
-            canvas.create_line((rEyeX-10), rEyeY, (rEyeX+10), rEyeY) #line
-            print("line")
-        if rShapeCheck == 8:
-            canvas.create_line((rEyeX-12), (rEyeY-6), rEyeX, (rEyeY+6), (rEyeX+12), (rEyeY-6), smooth=1) #curved line
-            print("curved line")
-    else:
-        canvas.create_oval((rEyeX-12), (rEyeY+6), (rEyeX+12), (rEyeY-6))
 
-        
-    canvas.create_oval((lEyeX-12), (lEyeY+6), (lEyeX+12), (lEyeY-6)) #create the eyes
 
     canvas.create_polygon(noseX, noseY, (noseX-6), (noseY+24), (noseX+6), (noseY+24), outline="black", fill="") #create the nose, 3 points just means this is a triangle
 
     canvas.create_arc((mouthX-16), mouthY, (mouthX+16), (mouthY+18), start=0, extent=-180) #create the mouth, a semi-circle 32 across and 18 down, -180 so the arc sweeps down and not up.
+
+
+
+def generate_eye_shapes(eyeCoords, checksList):
+
+    j = 0 #to know which iteration is the second eye (to check if they should match)
+    eyeCheck = random.randint(0,100) #chance that the eyes will match
+    previousShape = 0 #to store the shape of the previous eye if they are to match
+    eShapeCheck = 0 #current eye shape to be used in if statements
+
+    sizes = []
+    size_check = random.randint(0,100)
+    if size_check <= 40:
+        size = random.uniform(0.4,2.5)
+        sizes.append(size)
+        sizes.append(size + random.uniform(-0.2,0.2)) #40% chance of similar sized eyes
+    else:
+        sizes.append(random.uniform(0.4,2.5))
+        sizes.append(random.uniform(0.4,2.5))  
+
+    for i in range(0,3,2): #loop through the eye coordinates list, every 2 to get x and y pairs
+        if checksList[j] <= 70: #70% chance to get a non-oval eye shape
+            eShapeCheck = random.randint(1,8) #randomly choose eye shape
+            if j == 1 and eyeCheck <= 80: 
+                eShapeCheck = previousShape #second eye has an 80% chance to match the first eye
+
+
+            if eShapeCheck == 0:
+                canvas.create_oval((eyeCoords[i]-(12*sizes[j])), (eyeCoords[i+1]+(6*sizes[j])), (eyeCoords[i]+(12*sizes[j])), (eyeCoords[i+1]-(6*sizes[j]))) #oval (runs if eShapeCheck is 0, happens when )
+            if eShapeCheck == 1:
+                canvas.create_oval((eyeCoords[i]-(9*sizes[j])), (eyeCoords[i+1]+(9*sizes[j])), (eyeCoords[i]+(9*sizes[j])), (eyeCoords[i+1]-(9*sizes[j]))) #circle
+            if eShapeCheck == 2:
+                canvas.create_polygon((eyeCoords[i]-(9*sizes[j])), (eyeCoords[i+1]+(9*sizes[j])), (eyeCoords[i]-(9*sizes[j])), (eyeCoords[i+1]-(9*sizes[j])), (eyeCoords[i]+(9*sizes[j])), (eyeCoords[i+1]-(9*sizes[j])), (eyeCoords[i]+(9*sizes[j])), (eyeCoords[i+1]+(9*sizes[j])), outline="black", fill="") #square
+            if eShapeCheck == 3:
+                canvas.create_polygon((eyeCoords[i]-(12*sizes[j])), (eyeCoords[i+1]+(6*sizes[j])), (eyeCoords[i]-(12*sizes[j])), (eyeCoords[i+1]-(6*sizes[j])), (eyeCoords[i]+(12*sizes[j])), (eyeCoords[i+1]-(6*sizes[j])), (eyeCoords[i]+(12*sizes[j])), (eyeCoords[i+1]+(6*sizes[j])), outline="black", fill="") #rectangle
+            if eShapeCheck == 4:
+                canvas.create_line((eyeCoords[i]-(8*sizes[j])), eyeCoords[i+1], (eyeCoords[i]-(9*sizes[j])), (eyeCoords[i+1]-(4*sizes[j])), (eyeCoords[i]-(5*sizes[j])), (eyeCoords[i+1]-(9*sizes[j])), eyeCoords[i], (eyeCoords[i+1]-(5*sizes[j])), smooth=1)
+                canvas.create_line((eyeCoords[i]+(8*sizes[j])), eyeCoords[i+1], (eyeCoords[i]+(9*sizes[j])), (eyeCoords[i+1]-(4*sizes[j])), (eyeCoords[i]+(5*sizes[j])), (eyeCoords[i+1]-(9*sizes[j])), eyeCoords[i], (eyeCoords[i+1]-(5*sizes[j])), smooth=1)
+                canvas.create_line((eyeCoords[i]-(8*sizes[j])), eyeCoords[i+1], eyeCoords[i], (eyeCoords[i+1]+(9*sizes[j])), (eyeCoords[i]+(8*sizes[j])), eyeCoords[i+1]) #heart shape made of 3 lines
+            if eShapeCheck == 5:
+                canvas.create_polygon(eyeCoords[i], (eyeCoords[i+1]-(9*sizes[j])), (eyeCoords[i]+(2*sizes[j])), (eyeCoords[i+1]-(3*sizes[j])), (eyeCoords[i]+(9*sizes[j])), (eyeCoords[i+1]-(3*sizes[j])), (eyeCoords[i]+(3*sizes[j])), (eyeCoords[i+1]+(1*sizes[j])), (eyeCoords[i]+(5*sizes[j])), (eyeCoords[i+1]+(7*sizes[j])), eyeCoords[i], (eyeCoords[i+1]+(4*sizes[j])), (eyeCoords[i]-(5*sizes[j])), (eyeCoords[i+1]+(7*sizes[j])), (eyeCoords[i]-(3*sizes[j])), (eyeCoords[i+1]+(1*sizes[j])), (eyeCoords[i]-(9*sizes[j])), (eyeCoords[i+1]-(3*sizes[j])), (eyeCoords[i]-(2*sizes[j])), (eyeCoords[i+1]-(3*sizes[j])), outline="black", fill="") #star
+            if eShapeCheck == 6:
+                canvas.create_arc((eyeCoords[i]-(12*sizes[j])), (eyeCoords[i+1]-(12*sizes[j])), (eyeCoords[i]+(12*sizes[j])), (eyeCoords[i+1]+(12*sizes[j])), start=0, extent=-180) #semi circle
+            if eShapeCheck == 7:
+                canvas.create_line((eyeCoords[i]-(10*sizes[j])), eyeCoords[i+1], (eyeCoords[i]+(10*sizes[j])), eyeCoords[i+1]) #line
+            if eShapeCheck == 8:
+                canvas.create_line((eyeCoords[i]-(12*sizes[j])), (eyeCoords[i+1]-(6*sizes[j])), eyeCoords[i], (eyeCoords[i+1]+(6*sizes[j])), (eyeCoords[i]+(12*sizes[j])), (eyeCoords[i+1]-(6*sizes[j])), smooth=1) #curved line
+        else:
+            canvas.create_oval((eyeCoords[i]-(12*sizes[j])), (eyeCoords[i+1]+(6*sizes[j])), (eyeCoords[i]+(12*sizes[j])), (eyeCoords[i+1]-(6*sizes[j]))) #oval
+
+        j += 1
+        previousShape = eShapeCheck #store the shape of the current eye for matching purposes
+
 
 
 
@@ -137,12 +160,11 @@ for i in range (0,20):
     #faceEq = (((x-128)**2)/(76**2)) + (((y-128)**2)/(96**2)) = 1 equation of an ellipse, centre point 128,128, major axis 129 (height of face), minor axis 152 (width of face)
     #for future use
     
-    j = random.randint(0,20)
-    if j <= 10: #just to get each type to generate 50% of the time, only for testing !!
-        allowed_positions(rEyeX, rEyeY, lEyeX, lEyeY, noseX, noseY, mouthX, mouthY)
-    else:
-        create_random(rEyeX, rEyeY, lEyeX, lEyeY, noseX, noseY, mouthX, mouthY)
+    #j = random.randint(0,20)
+    #if j <= 10: #just to get each type to generate 50% of the time, only for testing !!
+    allowed_positions(rEyeX, rEyeY, lEyeX, lEyeY, noseX, noseY, mouthX, mouthY)  
+    #else:
+        #create_random(rEyeX, rEyeY, lEyeX, lEyeY, noseX, noseY, mouthX, mouthY)
         
     canvas.pack() #add canvas to window and show
     root.mainloop()
-    #hegwuaefnlikadfnk;li.
