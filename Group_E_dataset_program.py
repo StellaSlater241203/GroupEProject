@@ -87,46 +87,46 @@ def rotate_shape(points, angleDeg, cx, cy): #rotation function, uses 2d rotation
 
 
 def generate_features(rEyeX, rEyeY, lEyeX, lEyeY, noseX, noseY, mouthX, mouthY, checksList):
-    eyeCoords = [rEyeX, rEyeY, lEyeX, lEyeY]
+    #eyeCoords = [rEyeX, rEyeY, lEyeX, lEyeY]
 
-    for i in range(0,1):
+    #for i in range(0,1):
 
-        if checksList[0] <= 20: #weighting for different a different eye shape
-            rShapeCheck = random.randint(1,8)
-            if rShapeCheck == 1:
-                canvas.create_oval((eyeCoords[0]-9), (eyeCoords[1]+9), (eyeCoords[0]+9), (eyeCoords[1]-9)) #circle
-                print("circle")
-            if rShapeCheck == 2:
-                canvas.create_polygon((rEyeX-9), (rEyeY+9), (rEyeX-9), (rEyeY-9), (rEyeX+9), (rEyeY-9), (rEyeX+9), (rEyeY+9), outline="black", fill="") #square
-                print("square")
-            if rShapeCheck == 3:
-                canvas.create_polygon((rEyeX-12), (rEyeY+6), (rEyeX-12), (rEyeY-6), (rEyeX+12), (rEyeY-6), (rEyeX+12), (rEyeY+6), outline="black", fill="") #rectangle
-                print("rectangle")
-            if rShapeCheck == 4:
-                #canvas.create_polygon() this'll be the heart when i can work out how to make one <3 heart
-                print("heart")
-                canvas.create_oval((rEyeX-12), (rEyeY+6), (rEyeX+12), (rEyeY-6))
-            if rShapeCheck == 5:
-                canvas.create_polygon(rEyeX, (rEyeY-9), (rEyeX+2), (rEyeY-3), (rEyeX+9), (rEyeY-3), (rEyeX+3), (rEyeY+1), (rEyeX+5), (rEyeY+7), rEyeX, (rEyeY+4), (rEyeX-5), (rEyeY+7), (rEyeX-3), (rEyeY+1), (rEyeX-9), (rEyeY-3), (rEyeX-2), (rEyeY-3), outline="black", fill="") #star
-                print("star")
-            if rShapeCheck == 6:
-                canvas.create_arc((rEyeX-12), (rEyeY-12), (rEyeX+12), (rEyeY+12), start=0, extent=-180) #semi circle
-                print("semi circle")
-            if rShapeCheck == 7:
-                canvas.create_line((rEyeX-10), rEyeY, (rEyeX+10), rEyeY) #line
-                print("line")
-            if rShapeCheck == 8:
-                canvas.create_line((rEyeX-12), (rEyeY-6), rEyeX, (rEyeY+6), (rEyeX+12), (rEyeY-6), smooth=1) #curved line
-                print("curved line")
-        else:
+    if checksList[0] <= 60: #weighting for different a different eye shape
+        rShapeCheck = random.randint(1,8)
+        if rShapeCheck == 1:
+            canvas.create_oval((rEyeX-9), (rEyeY+9), (rEyeX+9), (rEyeY-9)) #circle
+            print("circle")
+        if rShapeCheck == 2:
+            canvas.create_polygon((rEyeX-9), (rEyeY+9), (rEyeX-9), (rEyeY-9), (rEyeX+9), (rEyeY-9), (rEyeX+9), (rEyeY+9), outline="black", fill="") #square
+            print("square")
+        if rShapeCheck == 3:
+            canvas.create_polygon((rEyeX-12), (rEyeY+6), (rEyeX-12), (rEyeY-6), (rEyeX+12), (rEyeY-6), (rEyeX+12), (rEyeY+6), outline="black", fill="") #rectangle
+            print("rectangle")
+        if rShapeCheck == 4:
+            #canvas.create_polygon() this'll be the heart when i can work out how to make one <3 heart
+            print("heart")
             canvas.create_oval((rEyeX-12), (rEyeY+6), (rEyeX+12), (rEyeY-6))
+        if rShapeCheck == 5:
+            canvas.create_polygon(rEyeX, (rEyeY-9), (rEyeX+2), (rEyeY-3), (rEyeX+9), (rEyeY-3), (rEyeX+3), (rEyeY+1), (rEyeX+5), (rEyeY+7), rEyeX, (rEyeY+4), (rEyeX-5), (rEyeY+7), (rEyeX-3), (rEyeY+1), (rEyeX-9), (rEyeY-3), (rEyeX-2), (rEyeY-3), outline="black", fill="") #star
+            print("star")
+        if rShapeCheck == 6:
+            canvas.create_arc((rEyeX-12), (rEyeY-12), (rEyeX+12), (rEyeY+12), start=0, extent=-180) #semi circle
+            print("semi circle")
+        if rShapeCheck == 7:
+            canvas.create_line((rEyeX-10), rEyeY, (rEyeX+10), rEyeY) #line
+            print("line")
+        if rShapeCheck == 8:
+            canvas.create_line((rEyeX-12), (rEyeY-6), rEyeX, (rEyeY+6), (rEyeX+12), (rEyeY-6), smooth=1) #curved line
+            print("curved line")
+    else:
+        canvas.create_oval((rEyeX-12), (rEyeY+6), (rEyeX+12), (rEyeY-6))
 
         
-        canvas.create_oval((lEyeX-12), (lEyeY+6), (lEyeX+12), (lEyeY-6)) #create the eyes
+    canvas.create_oval((lEyeX-12), (lEyeY+6), (lEyeX+12), (lEyeY-6)) #create the eyes
 
-        canvas.create_polygon(noseX, noseY, (noseX-6), (noseY+24), (noseX+6), (noseY+24), outline="black", fill="") #create the nose, 3 points just means this is a triangle
+    canvas.create_polygon(noseX, noseY, (noseX-6), (noseY+24), (noseX+6), (noseY+24), outline="black", fill="") #create the nose, 3 points just means this is a triangle
 
-        canvas.create_arc((mouthX-16), mouthY, (mouthX+16), (mouthY+18), start=0, extent=-180) #create the mouth, a semi-circle 32 across and 18 down, -180 so the arc sweeps down and not up.
+    canvas.create_arc((mouthX-16), mouthY, (mouthX+16), (mouthY+18), start=0, extent=-180) #create the mouth, a semi-circle 32 across and 18 down, -180 so the arc sweeps down and not up.
 
 
 
