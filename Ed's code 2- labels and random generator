@@ -1,0 +1,551 @@
+import tkinter
+import random
+import math
+import os
+import csv
+
+CANVAS_W, CANVAS_H = 256, 256
+FACE_LEFT, FACE_TOP, FACE_RIGHT, FACE_BOTTOM = 52, 32, 204, 224
+FACE_CX, FACE_CY = 128, 128
+FACE_W = FACE_RIGHT - FACE_LEFT  
+FACE_H = FACE_BOTTOM - FACE_TOP  
+
+
+NON_FACE_THRESHOLDS = {
+    "eye_size_ratio_max": 1.8,                # R3: "stupidly different eye sizes"
+    "eye_sep_max_px": int(0.75 * FACE_W),     # R4: "really wide apart eyes"
+    "overlap_pad_px": 1,                      # R5: "overlap of any features"
+}
+
+def _bbox_from_centre(cx, cy, half_w, half_h):
+    return (cx - half_w, cy - half_h, cx + half_w, cy + half_h)
+
+def eye_bbox(shape_id, size, cx, cy):
+    if shape_id == 0:
+        hw, hh = 12*size, 6*size
+    elif shape_id == 1: 
+        hw, hh = 9*size, 9*size
+    elif shape_id == 2: 
+        hw, hh = 9*size, 9*size
+    elif shape_id == 3: 
+        hw, hh = 12*size, 6*size
+    elif shape_id == 4:
+        hw, hh = 9*size, 9*size
+    elif shape_id == 5: 
+        hw, hh = 9*size, 9*size
+    elif shape_id == 6: 
+        hw, hh = 12*size, 12*size
+    elif shape_id == 7: 
+        hw, hh = 10*size, 2
+    elif shape_id == 8: 
+        hw, hh = 12*size, 6*size
+    else:
+        hw, hh = 10*size, 6*size
+    return _bbox_from_centre(cx, cy, hw, hh)
+
+def nose_bbox(nose):
+    x, y = nose["x"], nose["y"]
+    return (x - 6, y, x + 6, y + 24)
+
+def mouth_bbox(mouth):
+    x, y = mouth["x"], mouth["y"]
+    return (x - 16, y, x + 16, y + 18)
+
+_A = (FACE_RIGHT - FACE_LEFT) / 2.0 
+_B = (FACE_BOTTOM - FACE_TOP) / 2.0  
+def point_inside_face(x, y):
+    dx = (x - FACE_CX) / _A
+    dy = (y - FACE_CY) / _B
+    return (dx*dx + dy*dy) <= 1.0
+
+def _eye_extents(shape_id, size):
+    if shape_id == 0:   return 12*size,  6*size  # oval
+    if shape_id == 1:   return  9*size,  9*size  # circle
+    if shape_id == 2:   return  9*size,  9*size  # square
+    if shape_id == 3:   return 12*size,  6*size  # rectangle
+    if shape_id == 4:   return  9*size,  9*size  # heart 
+    if shape_id == 5:   return  9*size,  9*size  # star 
+    if shape_id == 6:   return 12*size, 12*size  # semicircle arc bbox
+    if shape_id == 7:   return 10*size,  2       # line
+    if shape_id == 8:   return 12*size,  6*size  # curved line
+    return 10*size, 6*size
+
+def eye_inside_face(e):
+    cx, cy = float(e["x"]), float(e["y"])
+    hw, hh = _eye_extents(int(e["shape_id"]), float(e["size"]))
+    return (point_inside_face(cx - hw, cy) and
+            point_inside_face(cx + hw, cy) and
+            point_inside_face(cx, cy - hh) and
+            point_inside_face(cx, cy + hh))
+
+def nose_inside_face(nose):
+    x, y = nose["x"], nose["y"]
+    return (point_inside_face(x, y) and
+            point_inside_face(x - 6, y + 24) and
+            point_inside_face(x + 6, y + 24))
+
+def mouth_inside_face(mouth):
+    x, y = mouth["x"], mouth["y"]
+    return (point_inside_face(x - 16, y + 9) and
+            point_inside_face(x + 16, y + 9) and
+            point_inside_face(x,      y + 18))
+
+def bboxes_overlap(a, b, pad=1):
+    ax1, ay1, ax2, ay2 = a
+    bx1, by1, bx2, by2 = b
+    ax1 -= pad; ay1 -= pad; ax2 += pad; ay2 += pad
+    bx1 -= pad; by1 -= pad; bx2 += pad; by2 += pad
+    return not (ax2 < bx1 or bx2 < ax1 or ay2 < by1 or by2 < ay1)
+
+def spec_to_canonical(spec):
+    """Normalise to lists so we can count multiples."""
+    if isinstance(spec.get("eyes"), list):
+        eyes = list(spec["eyes"])
+    else:
+        eyes = []
+        if spec.get("r_eye") is not None:
+            eyes.append(spec["r_eye"])
+        if spec.get("l_eye") is not None:
+            eyes.append(spec["l_eye"])
+
+    noses_raw = spec.get("nose")
+    if isinstance(noses_raw, list):
+        noses = list(noses_raw)
+    else:
+        noses = [noses_raw] if noses_raw is not None else []
+
+    mouths_raw = spec.get("mouth")
+    if isinstance(mouths_raw, list):
+        mouths = list(mouths_raw)
+    else:
+        mouths = [mouths_raw] if mouths_raw is not None else []
+
+    return {"eyes": eyes, "noses": noses, "mouths": mouths}
+
+
+def is_non_face_by_rules(spec):
+    """
+    Returns (non_face_flag: bool, reasons: list[str]).
+    Fires if ANY single rule is violated.
+    """
+    s = spec_to_canonical(spec)  # -> {"eyes": [...], "noses": [...], "mouths": [...]}
+    reasons = []
+
+    n_eyes   = len(s["eyes"])
+    n_noses  = len(s["noses"])
+    n_mouths = len(s["mouths"])
+
+    # R1: missing features
+    if n_eyes != 2:
+        reasons.append("R1:incorrect_number_of_eyes")
+    if n_noses == 0:
+        reasons.append("R1b:no_nose")
+    if n_mouths == 0:
+        reasons.append("R1c:no_mouth")
+
+    # R2: multiple features
+    if n_eyes  > 2: reasons.append(f"R8:too_many_eyes({n_eyes})")
+    if n_noses > 1: reasons.append(f"R8:multiple_noses({n_noses})")
+    if n_mouths> 1: reasons.append(f"R8:multiple_mouths({n_mouths})")
+
+    # eye based rules
+    if n_eyes >= 2:
+        e0, e1 = s["eyes"][0], s["eyes"][1]
+
+        # R3: different eye shapes
+        if e0.get("shape_id") is not None and e1.get("shape_id") is not None:
+            if int(e0["shape_id"]) != int(e1["shape_id"]):
+                reasons.append("R2:different_eye_shapes")
+
+        # R4: very different eye sizes
+        if e0.get("size") and e1.get("size"):
+            big = max(e0["size"], e1["size"])
+            small = max(1e-6, min(e0["size"], e1["size"]))
+            if big / small > NON_FACE_THRESHOLDS["eye_size_ratio_max"]:
+                reasons.append("R3:eye_size_ratio_too_large")
+
+        # R5: eyes too wide apart
+        if "x" in e0 and "x" in e1:
+            if abs(e0["x"] - e1["x"]) > NON_FACE_THRESHOLDS["eye_sep_max_px"]:
+                reasons.append("R4:eyes_too_wide_apart")
+
+    # R6: forbid heart/star eyes (any eye)
+    if any(int(e.get("shape_id", -1)) in (4, 5) for e in s["eyes"]):
+        reasons.append("R6:forbidden_eye_shape(heart_or_star)")
+
+    # R7: any feature outside the face ellipse (check ALL instances)
+    if any(not eye_inside_face(e)   for e in s["eyes"]):
+        reasons.append("R7:feature_outside_face(eye)")
+    if any(not nose_inside_face(n)  for n in s["noses"]):
+        reasons.append("R7:feature_outside_face(nose)")
+    if any(not mouth_inside_face(m) for m in s["mouths"]):
+        reasons.append("R7:feature_outside_face(mouth)")
+
+    # R8: any feature overlap (pairwise over ALL eyes/noses/mouths)
+    boxes, names = [], []
+    for idx, e in enumerate(s["eyes"]):
+        if all(k in e for k in ("x", "y", "shape_id", "size")):
+            boxes.append(eye_bbox(int(e["shape_id"]), float(e["size"]), float(e["x"]), float(e["y"])))
+            names.append(f"eye{idx}")
+    for idx, n in enumerate(s["noses"]):
+        boxes.append(nose_bbox(n)); names.append(f"nose{idx}")
+    for idx, m in enumerate(s["mouths"]):
+        boxes.append(mouth_bbox(m)); names.append(f"mouth{idx}")
+
+    for i in range(len(boxes)):
+        for j in range(i+1, len(boxes)):
+            if bboxes_overlap(boxes[i], boxes[j], pad=NON_FACE_THRESHOLDS["overlap_pad_px"]):
+                reasons.append(f"R5:overlap_{names[i]}_{names[j]}")
+
+    return (len(reasons) > 0, reasons)
+
+LABELS_DIR = "dataset"
+os.makedirs(LABELS_DIR, exist_ok=True)
+LABELS_CSV = os.path.join(LABELS_DIR, "labels.csv")
+LABELS_HEADER = [
+    "image_id", "label_is_face", "non_face_reasons",
+    "r_eye_x", "r_eye_y", "r_eye_shape_id", "r_eye_size",
+    "l_eye_x", "l_eye_y", "l_eye_shape_id", "l_eye_size",
+    "nose_x", "nose_y", "mouth_x", "mouth_y"
+]
+if not os.path.exists(LABELS_CSV):
+    with open(LABELS_CSV, "w", newline="") as f:
+        csv.DictWriter(f, fieldnames=LABELS_HEADER).writeheader()
+
+def write_label_row(image_id, spec, label_is_face, reasons):
+    r = spec["r_eye"]; l = spec["l_eye"]
+    nose_field = spec.get("nose")
+    mouth_field = spec.get("mouth")
+    if isinstance(nose_field, list):
+        primary_nose = nose_field[0] if nose_field else {"x": 0, "y": 0}
+    else:
+        primary_nose = nose_field or {"x": 0, "y": 0}
+    if isinstance(mouth_field, list):
+        primary_mouth = mouth_field[0] if mouth_field else {"x": 0, "y": 0}
+    else:
+        primary_mouth = mouth_field or {"x": 0, "y": 0}
+
+    row = {
+        "image_id": image_id,
+        "label_is_face": int(label_is_face),
+        "non_face_reasons": ";".join(reasons),
+
+        "r_eye_x": round(r["x"], 2),
+        "r_eye_y": round(r["y"], 2),
+        "r_eye_shape_id": int(r["shape_id"]),
+        "r_eye_size": round(float(r["size"]), 3),
+
+        "l_eye_x": round(l["x"], 2),
+        "l_eye_y": round(l["y"], 2),
+        "l_eye_shape_id": int(l["shape_id"]),
+        "l_eye_size": round(float(l["size"]), 3),
+
+        "nose_x": int(primary_nose.get("x", 0)),
+        "nose_y": int(primary_nose.get("y", 0)),
+        "mouth_x": int(primary_mouth.get("x", 0)),
+        "mouth_y": int(primary_mouth.get("y", 0)),
+    }
+    with open(LABELS_CSV, "a", newline="") as f:
+        csv.DictWriter(f, fieldnames=LABELS_HEADER).writerow(row)
+
+rEyeX = rEyeY = lEyeX = lEyeY = noseX = noseY = mouthX = mouthY = 0
+
+def rotate_shape(points, angleDeg, cx, cy):
+    a = math.radians(angleDeg)
+    cosa = math.cos(a)
+    sina = math.sin(a)
+    out = []
+    for i in range(0, len(points), 2):
+        x = points[i] - cx
+        y = points[i+1] - cy
+        xr = x*cosa - y*sina + cx
+        yr = x*sina + y*cosa + cy
+        out.append(xr); out.append(yr)
+    return out
+
+def generate_eye_shapes(eyeCoords, checksList):
+    j = 0
+    eyeCheck = random.randint(0,100)  # chance second eye matches first
+    previousShape = 0
+    eShapeCheck = 0
+
+    sizes = []
+    size_check = random.randint(0,100)
+    if size_check <= 40:
+        size = random.uniform(0.4, 2.5)
+        sizes.append(size)
+        sizes.append(size + random.uniform(-0.2, 0.2))  # similar sizes
+    else:
+        sizes.append(random.uniform(0.4, 2.5))
+        sizes.append(random.uniform(0.4, 2.5))
+
+    rec = {}  
+
+    for i in range(0,3,2):  
+        if checksList[j] <= 70:
+            eShapeCheck = random.randint(0, 8)
+            if j == 1 and eyeCheck <= 80:
+                eShapeCheck = previousShape  
+        else:
+            eShapeCheck = 0  # oval
+
+        if eShapeCheck == 0:
+            canvas.create_oval((eyeCoords[i]-(12*sizes[j])), (eyeCoords[i+1]+(6*sizes[j])),
+                               (eyeCoords[i]+(12*sizes[j])), (eyeCoords[i+1]-(6*sizes[j])))
+        if eShapeCheck == 1:
+            canvas.create_oval((eyeCoords[i]-(9*sizes[j])), (eyeCoords[i+1]+(9*sizes[j])),
+                               (eyeCoords[i]+(9*sizes[j])), (eyeCoords[i+1]-(9*sizes[j])))
+        if eShapeCheck == 2:
+            canvas.create_polygon((eyeCoords[i]-(9*sizes[j])), (eyeCoords[i+1]+(9*sizes[j])),
+                                  (eyeCoords[i]-(9*sizes[j])), (eyeCoords[i+1]-(9*sizes[j])),
+                                  (eyeCoords[i]+(9*sizes[j])), (eyeCoords[i+1]-(9*sizes[j])),
+                                  (eyeCoords[i]+(9*sizes[j])), (eyeCoords[i+1]+(9*sizes[j])),
+                                  outline="black", fill="")
+        if eShapeCheck == 3:
+            canvas.create_polygon((eyeCoords[i]-(12*sizes[j])), (eyeCoords[i+1]+(6*sizes[j])),
+                                  (eyeCoords[i]-(12*sizes[j])), (eyeCoords[i+1]-(6*sizes[j])),
+                                  (eyeCoords[i]+(12*sizes[j])), (eyeCoords[i+1]-(6*sizes[j])),
+                                  (eyeCoords[i]+(12*sizes[j])), (eyeCoords[i+1]+(6*sizes[j])),
+                                  outline="black", fill="")
+        if eShapeCheck == 4:
+            canvas.create_line((eyeCoords[i]-(8*sizes[j])), eyeCoords[i+1],
+                               (eyeCoords[i]-(9*sizes[j])), (eyeCoords[i+1]-(4*sizes[j])),
+                               (eyeCoords[i]-(5*sizes[j])), (eyeCoords[i+1]-(9*sizes[j])),
+                               eyeCoords[i], (eyeCoords[i+1]-(5*sizes[j])), smooth=1)
+            canvas.create_line((eyeCoords[i]+(8*sizes[j])), eyeCoords[i+1],
+                               (eyeCoords[i]+(9*sizes[j])), (eyeCoords[i+1]-(4*sizes[j])),
+                               (eyeCoords[i]+(5*sizes[j])), (eyeCoords[i+1]-(9*sizes[j])),
+                               eyeCoords[i], (eyeCoords[i+1]-(5*sizes[j])), smooth=1)
+            canvas.create_line((eyeCoords[i]-(8*sizes[j])), eyeCoords[i+1],
+                               eyeCoords[i], (eyeCoords[i+1]+(9*sizes[j])),
+                               (eyeCoords[i]+(8*sizes[j])), eyeCoords[i+1])
+        if eShapeCheck == 5:
+            canvas.create_polygon(eyeCoords[i], (eyeCoords[i+1]-(9*sizes[j])),
+                                  (eyeCoords[i]+(2*sizes[j])), (eyeCoords[i+1]-(3*sizes[j])),
+                                  (eyeCoords[i]+(9*sizes[j])), (eyeCoords[i+1]-(3*sizes[j])),
+                                  (eyeCoords[i]+(3*sizes[j])), (eyeCoords[i+1]+(1*sizes[j])),
+                                  (eyeCoords[i]+(5*sizes[j])), (eyeCoords[i+1]+(7*sizes[j])),
+                                  eyeCoords[i], (eyeCoords[i+1]+(4*sizes[j])),
+                                  (eyeCoords[i]-(5*sizes[j])), (eyeCoords[i+1]+(7*sizes[j])),
+                                  (eyeCoords[i]-(3*sizes[j])), (eyeCoords[i+1]+(1*sizes[j])),
+                                  (eyeCoords[i]-(9*sizes[j])), (eyeCoords[i+1]-(3*sizes[j])),
+                                  (eyeCoords[i]-(2*sizes[j])), (eyeCoords[i+1]-(3*sizes[j])),
+                                  outline="black", fill="")
+        if eShapeCheck == 6:
+            canvas.create_arc((eyeCoords[i]-(12*sizes[j])), (eyeCoords[i+1]-(12*sizes[j])),
+                              (eyeCoords[i]+(12*sizes[j])), (eyeCoords[i+1]+(12*sizes[j])),
+                              start=0, extent=-180)
+        if eShapeCheck == 7:
+            canvas.create_line((eyeCoords[i]-(10*sizes[j])), eyeCoords[i+1],
+                               (eyeCoords[i]+(10*sizes[j])), eyeCoords[i+1])
+        if eShapeCheck == 8:
+            canvas.create_line((eyeCoords[i]-(12*sizes[j])), (eyeCoords[i+1]-(6*sizes[j])),
+                               eyeCoords[i], (eyeCoords[i+1]+(6*sizes[j])),
+                               (eyeCoords[i]+(12*sizes[j])), (eyeCoords[i+1]-(6*sizes[j])),
+                               smooth=1)
+
+        entry = {"x": eyeCoords[i], "y": eyeCoords[i+1],
+                 "shape_id": int(eShapeCheck), "size": float(sizes[j])}
+        if j == 0:
+            rec["r_eye"] = entry
+        else:
+            rec["l_eye"] = entry
+
+        j += 1
+        previousShape = eShapeCheck
+
+    return rec
+
+def generate_features(rEyeX, rEyeY, lEyeX, lEyeY,
+                      noseX, noseY, mouthX, mouthY, checksList,
+                      nose_angle=None, mouth_start=None, mouth_extent=None,
+                      forced_non_face=False):
+    eyeCoords = [rEyeX, rEyeY, lEyeX, lEyeY]
+    eye_spec = generate_eye_shapes(eyeCoords, checksList)
+
+
+    nose_pts = [noseX, noseY, (noseX-6), (noseY+24), (noseX+6), (noseY+24)]
+    if nose_angle is not None:
+        cx, cy = noseX, noseY + 16  
+        nose_pts = rotate_shape(nose_pts, nose_angle, cx, cy)
+    canvas.create_polygon(*nose_pts, outline="black", fill="")
+
+    if mouth_start is None:
+        mouth_start = 0
+    if mouth_extent is None:
+        mouth_extent = -180
+    canvas.create_arc((mouthX-16), mouthY, (mouthX+16), (mouthY+18),
+                      start=mouth_start, extent=mouth_extent)
+
+    #assemble and return spec
+    spec = {
+        "r_eye": eye_spec["r_eye"],
+        "l_eye": eye_spec["l_eye"],
+        "eyes": [eye_spec["r_eye"], eye_spec["l_eye"]],  # add list for counting
+        "nose": {"x": noseX, "y": noseY, "shape": "triangle", "angle": float(nose_angle or 0.0)},
+        "mouth": {"x": mouthX, "y": mouthY, "shape": "arc",
+                  "start": int(mouth_start), "extent": int(mouth_extent)},
+        "_forced_non_face": bool(forced_non_face),
+    }
+    return spec
+
+def allowed_positions(rEyeX, rEyeY, lEyeX, lEyeY, noseX, noseY, mouthX, mouthY, free_nm=False):
+    rEyeCircle = 1025
+    while rEyeCircle > 1024:
+        rEyeX = random.randint(74, 106)
+        rEyeY = random.randint(134, 166)
+        rEyeCircle = ((rEyeX-106)**2)+((rEyeY-134)**2)
+
+    rEyeYinvert = CANVAS_H - rEyeY
+
+    lEyeX = CANVAS_W - rEyeX + random.randint(-3,3)
+    lEyeYinvert = rEyeYinvert + random.randint(-3,3)
+
+    if not free_nm:
+        
+        noseX = random.randint(122, 134)
+        noseY = random.randint(110, (rEyeY-10))
+        noseYinvert = CANVAS_H - noseY
+
+        mouthX = random.randint(122,134)
+        mouthY = random.randint(64, (noseY-32))
+        mouthYinvert = CANVAS_H - mouthY
+
+        nose_angle = None
+        mouth_start = 0
+        mouth_extent = -180
+        forced_non_face = False
+    else:
+     
+        noseX = random.randint(6, CANVAS_W-6)
+        noseYinvert = random.randint(6, CANVAS_H-24)  
+
+        mouthX = random.randint(16, CANVAS_W-16)
+        mouthYinvert = random.randint(0, CANVAS_H-18)
+
+        nose_angle = random.uniform(0, 360)
+        mouth_start = random.randint(0, 359)
+        mouth_extent = random.choice([180, -180])
+        forced_non_face = True
+
+    checksList = [random.randint(0,100) for _ in range(10)]
+
+    return generate_features(rEyeX, rEyeYinvert, lEyeX, lEyeYinvert,
+                             noseX, noseYinvert, mouthX, mouthYinvert, checksList,
+                             nose_angle=nose_angle, mouth_start=mouth_start, mouth_extent=mouth_extent,
+                             forced_non_face=forced_non_face)
+
+
+def create_random(rEyeX, rEyeY, lEyeX, lEyeY, noseX, noseY, mouthX, mouthY):
+    while ((((rEyeX)-128)**2)/(60**2)) + ((((rEyeY)-128)**2)/(86**2)) >= 1:
+        rEyeX = random.randint (52,204)
+        rEyeY = random.randint (32,224)
+    canvas.create_oval((rEyeX-12), (rEyeY+6), (rEyeX+12), (rEyeY-6))
+    while ((((lEyeX)-128)**2)/(60**2)) + ((((lEyeY)-128)**2)/(86**2)) >= 1:
+        lEyeX = random.randint (52,204)
+        lEyeY = random.randint (32,224)
+    canvas.create_oval((lEyeX-12), (lEyeY+6), (lEyeX+12), (lEyeY-6))
+    while ((((noseX)-128)**2)/(66**2)) + ((((noseY+12)-128)**2)/(86**2)) >= 1:
+        noseX = random.randint (52,204)
+        noseY = random.randint (32,224)
+    canvas.create_polygon(noseX, noseY, (noseX-6), (noseY+24), (noseX+6), (noseY+24), outline="black", fill="")
+    while ((((mouthX)-128)**2)/(56**2)) + ((((mouthY+9)-128)**2)/(76**2)) >= 1:
+        mouthX = random.randint (52,204)
+        mouthY = random.randint (32,224)
+    canvas.create_arc((mouthX-16), mouthY, (mouthX+16), (mouthY+18), start=0, extent=-180)
+
+#generation
+BATCH_SIZE = 10
+GRID_ROWS, GRID_COLS = 2, 5   
+NON_FACE_PROB = 0.5           
+
+def render_one(cv, image_id):
+    """Randomly generate either a Face (passes rules) or a Non-Face (violates)."""
+    global canvas
+    canvas = cv  
+    cv.delete("all")
+    cv.create_oval(FACE_LEFT, FACE_TOP, FACE_RIGHT, FACE_BOTTOM)
+
+    target_non_face = (random.random() < NON_FACE_PROB)
+    spec = None
+    non_face = None
+    reasons = []
+
+    if target_non_face:
+        if random.random() < 0.7:
+            spec = allowed_positions(rEyeX, rEyeY, lEyeX, lEyeY, noseX, noseY, mouthX, mouthY, free_nm=True)
+            non_face, reasons = is_non_face_by_rules(spec)
+            if spec.get("_forced_non_face"):
+                non_face = True
+                reasons += ["GEN:free_nose_mouth_anywhere"]
+        else:
+            for _ in range(12):
+                cv.delete("all")
+                cv.create_oval(FACE_LEFT, FACE_TOP, FACE_RIGHT, FACE_BOTTOM)
+
+                spec = allowed_positions(rEyeX, rEyeY, lEyeX, lEyeY, noseX, noseY, mouthX, mouthY, free_nm=False)
+                non_face, reasons = is_non_face_by_rules(spec)
+                if non_face:
+                    break
+            if not non_face:
+                cv.delete("all")
+                cv.create_oval(FACE_LEFT, FACE_TOP, FACE_RIGHT, FACE_BOTTOM)
+
+                spec = allowed_positions(rEyeX, rEyeY, lEyeX, lEyeY, noseX, noseY, mouthX, mouthY, free_nm=True)
+                non_face, reasons = is_non_face_by_rules(spec)
+                if spec.get("_forced_non_face"):
+                    non_face = True
+                    reasons += ["GEN:free_nose_mouth_anywhere"]
+    else:
+        for _ in range(20):
+            # clear before each attempt 
+            cv.delete("all")
+            cv.create_oval(FACE_LEFT, FACE_TOP, FACE_RIGHT, FACE_BOTTOM)
+
+            spec = allowed_positions(rEyeX, rEyeY, lEyeX, lEyeY, noseX, noseY, mouthX, mouthY, free_nm=False)
+            non_face, reasons = is_non_face_by_rules(spec)
+            if not non_face: 
+                break
+
+    label_is_face = (not non_face)
+    label_text = "Face" if label_is_face else "Non-Face"
+    cv.create_rectangle(6, 6, 106, 28, fill="#f0f0f0", outline="")
+    cv.create_text(12, 17, anchor="w",
+                   text=label_text,
+                   font=("TkDefaultFont", 11, "bold"),
+                   fill="#0a8a00" if label_is_face else "#b00020")
+
+    write_label_row(image_id, spec, label_is_face, reasons)
+
+def generate_batch(start_id=0):
+    for idx, cv in enumerate(canvases):
+        render_one(cv, start_id + idx)
+    root.update_idletasks()
+    root.update()
+
+# UI
+root = tkinter.Tk()
+root.title("Face / Non-Face — 10 at a time")
+
+container = tkinter.Frame(root)
+container.pack(padx=8, pady=8)
+canvases = []
+for r in range(GRID_ROWS):
+    for c in range(GRID_COLS):
+        cv = tkinter.Canvas(container, bg="white", height=CANVAS_H, width=CANVAS_W,
+                            highlightthickness=1, highlightbackground="#ddd")
+        cv.grid(row=r, column=c, padx=4, pady=4)
+        canvases.append(cv)
+
+controls = tkinter.Frame(root)
+controls.pack(pady=(0,8))
+batch_counter = {"n": 0}
+def on_next_batch():
+    start_id = batch_counter["n"] * BATCH_SIZE
+    generate_batch(start_id=start_id)
+    batch_counter["n"] += 1
+
+btn = tkinter.Button(controls, text=f"Generate {BATCH_SIZE}", command=on_next_batch)
+btn.grid(row=0, column=0, padx=6)
+on_next_batch()
+root.mainloop()
