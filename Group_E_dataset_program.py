@@ -160,11 +160,11 @@ for i in range (0,20):
     #faceEq = (((x-128)**2)/(76**2)) + (((y-128)**2)/(96**2)) = 1 equation of an ellipse, centre point 128,128, major axis 129 (height of face), minor axis 152 (width of face)
     #for future use
     
-    #j = random.randint(0,20)
-    #if j <= 10: #just to get each type to generate 50% of the time, only for testing !!
-    allowed_positions(rEyeX, rEyeY, lEyeX, lEyeY, noseX, noseY, mouthX, mouthY)  
-    #else:
-        #create_random(rEyeX, rEyeY, lEyeX, lEyeY, noseX, noseY, mouthX, mouthY)
+    j = random.randint(0,20)
+    if j <= 10: #just to get each type to generate 50% of the time, only for testing !!
+        allowed_positions(rEyeX, rEyeY, lEyeX, lEyeY, noseX, noseY, mouthX, mouthY)  
+    else:
+        create_random(rEyeX, rEyeY, lEyeX, lEyeY, noseX, noseY, mouthX, mouthY)
         
     canvas.pack() #add canvas to window and show
     root.mainloop()
