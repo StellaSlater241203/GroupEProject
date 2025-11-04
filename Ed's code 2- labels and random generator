@@ -4,45 +4,41 @@ import math
 import os
 import csv
 
+# Constants for face area
 CANVAS_W, CANVAS_H = 256, 256
 FACE_LEFT, FACE_TOP, FACE_RIGHT, FACE_BOTTOM = 52, 32, 204, 224
 FACE_CX, FACE_CY = 128, 128
-FACE_W = FACE_RIGHT - FACE_LEFT  
-FACE_H = FACE_BOTTOM - FACE_TOP  
+FACE_W = FACE_RIGHT - FACE_LEFT
+FACE_H = FACE_BOTTOM - FACE_TOP
 
-
+# Non-face detection thresholds
 NON_FACE_THRESHOLDS = {
-    "eye_size_ratio_max": 1.8,                # R3: "stupidly different eye sizes"
-    "eye_sep_max_px": int(0.75 * FACE_W),     # R4: "really wide apart eyes"
-    "overlap_pad_px": 1,                      # R5: "overlap of any features"
+    "eye_size_ratio_max": 1.8, # most allowed size ratio between eyes
+    "eye_sep_max_px": int(0.75 * FACE_W), # max horizontal separation between eyes
+    "overlap_pad_px": 1, # ensuring a small gap counts as non-overlapping
+    "nose_below_eye_min_dy": 8,   # needs to be at least this many px below the eye row
+    "nose_eye_level_tolerance": 3 # tolerance for nose base being in line with eye
 }
 
-def _bbox_from_centre(cx, cy, half_w, half_h):
+FORBIDDEN_EYE_SHAPE_IDS = (2, 3, 4, 5, 7) # square, rectangle, heart, star, line don't count as faces
+
+def _bbox_from_centre(cx, cy, half_w, half_h): # defines centre
     return (cx - half_w, cy - half_h, cx + half_w, cy + half_h)
 
-def eye_bbox(shape_id, size, cx, cy):
-    if shape_id == 0:
-        hw, hh = 12*size, 6*size
-    elif shape_id == 1: 
-        hw, hh = 9*size, 9*size
-    elif shape_id == 2: 
-        hw, hh = 9*size, 9*size
-    elif shape_id == 3: 
-        hw, hh = 12*size, 6*size
-    elif shape_id == 4:
-        hw, hh = 9*size, 9*size
-    elif shape_id == 5: 
-        hw, hh = 9*size, 9*size
-    elif shape_id == 6: 
-        hw, hh = 12*size, 12*size
-    elif shape_id == 7: 
-        hw, hh = 10*size, 2
-    elif shape_id == 8: 
-        hw, hh = 12*size, 6*size
-    else:
-        hw, hh = 10*size, 6*size
+def eye_bbox(shape_id, size, cx, cy): # defines eye bounding box and shapes
+    if shape_id == 0:   hw, hh = 12*size,  6*size # oval
+    elif shape_id == 1: hw, hh =  9*size,  9*size # circle
+    elif shape_id == 2: hw, hh =  9*size,  9*size # square
+    elif shape_id == 3: hw, hh = 12*size,  6*size # rectangle
+    elif shape_id == 4: hw, hh =  9*size,  9*size # heart
+    elif shape_id == 5: hw, hh =  9*size,  9*size # star
+    elif shape_id == 6: hw, hh = 12*size, 12*size # semicircle arc bbox
+    elif shape_id == 7: hw, hh = 10*size,  2 # line
+    elif shape_id == 8: hw, hh = 12*size,  6*size # curved line
+    else:               hw, hh = 12*size,  6*size # default
     return _bbox_from_centre(cx, cy, hw, hh)
 
+#nose and mouth bounding boxes
 def nose_bbox(nose):
     x, y = nose["x"], nose["y"]
     return (x - 6, y, x + 6, y + 24)
@@ -51,26 +47,27 @@ def mouth_bbox(mouth):
     x, y = mouth["x"], mouth["y"]
     return (x - 16, y, x + 16, y + 18)
 
-_A = (FACE_RIGHT - FACE_LEFT) / 2.0 
-_B = (FACE_BOTTOM - FACE_TOP) / 2.0  
+_A = (FACE_RIGHT - FACE_LEFT) / 2.0
+_B = (FACE_BOTTOM - FACE_TOP) / 2.0
+
 def point_inside_face(x, y):
     dx = (x - FACE_CX) / _A
     dy = (y - FACE_CY) / _B
     return (dx*dx + dy*dy) <= 1.0
 
-def _eye_extents(shape_id, size):
+def _eye_extents(shape_id, size): 
     if shape_id == 0:   return 12*size,  6*size  # oval
     if shape_id == 1:   return  9*size,  9*size  # circle
     if shape_id == 2:   return  9*size,  9*size  # square
     if shape_id == 3:   return 12*size,  6*size  # rectangle
-    if shape_id == 4:   return  9*size,  9*size  # heart 
-    if shape_id == 5:   return  9*size,  9*size  # star 
+    if shape_id == 4:   return  9*size,  9*size  # heart
+    if shape_id == 5:   return  9*size,  9*size  # star
     if shape_id == 6:   return 12*size, 12*size  # semicircle arc bbox
     if shape_id == 7:   return 10*size,  2       # line
     if shape_id == 8:   return 12*size,  6*size  # curved line
     return 10*size, 6*size
 
-def eye_inside_face(e):
+def eye_inside_face(e): # checks if eye is inside face
     cx, cy = float(e["x"]), float(e["y"])
     hw, hh = _eye_extents(int(e["shape_id"]), float(e["size"]))
     return (point_inside_face(cx - hw, cy) and
@@ -78,27 +75,27 @@ def eye_inside_face(e):
             point_inside_face(cx, cy - hh) and
             point_inside_face(cx, cy + hh))
 
-def nose_inside_face(nose):
+def nose_inside_face(nose): # checks if nose is inside face
     x, y = nose["x"], nose["y"]
     return (point_inside_face(x, y) and
             point_inside_face(x - 6, y + 24) and
             point_inside_face(x + 6, y + 24))
 
-def mouth_inside_face(mouth):
+def mouth_inside_face(mouth): # checks if mouth is inside face
     x, y = mouth["x"], mouth["y"]
     return (point_inside_face(x - 16, y + 9) and
             point_inside_face(x + 16, y + 9) and
             point_inside_face(x,      y + 18))
 
-def bboxes_overlap(a, b, pad=1):
+def bboxes_overlap(a, b, pad=1): # checks overlap 
     ax1, ay1, ax2, ay2 = a
     bx1, by1, bx2, by2 = b
     ax1 -= pad; ay1 -= pad; ax2 += pad; ay2 += pad
     bx1 -= pad; by1 -= pad; bx2 += pad; by2 += pad
     return not (ax2 < bx1 or bx2 < ax1 or ay2 < by1 or by2 < ay1)
 
-def spec_to_canonical(spec):
-    """Normalise to lists so we can count multiples."""
+# normalise spec to lists so rules can be applied uniformly, it allows two different representations of an object to be easily compared for equality
+def spec_to_canonical(spec): 
     if isinstance(spec.get("eyes"), list):
         eyes = list(spec["eyes"])
     else:
@@ -122,12 +119,8 @@ def spec_to_canonical(spec):
 
     return {"eyes": eyes, "noses": noses, "mouths": mouths}
 
-
+#rules for non faces, if any rule is violated then the image is labelled 'non-face' 
 def is_non_face_by_rules(spec):
-    """
-    Returns (non_face_flag: bool, reasons: list[str]).
-    Fires if ANY single rule is violated.
-    """
     s = spec_to_canonical(spec)  # -> {"eyes": [...], "noses": [...], "mouths": [...]}
     reasons = []
 
@@ -135,7 +128,7 @@ def is_non_face_by_rules(spec):
     n_noses  = len(s["noses"])
     n_mouths = len(s["mouths"])
 
-    # R1: missing features
+    # R1: missing features / wrong counts
     if n_eyes != 2:
         reasons.append("R1:incorrect_number_of_eyes")
     if n_noses == 0:
@@ -143,7 +136,7 @@ def is_non_face_by_rules(spec):
     if n_mouths == 0:
         reasons.append("R1c:no_mouth")
 
-    # R2: multiple features
+    # R2/R8: multiple features
     if n_eyes  > 2: reasons.append(f"R8:too_many_eyes({n_eyes})")
     if n_noses > 1: reasons.append(f"R8:multiple_noses({n_noses})")
     if n_mouths> 1: reasons.append(f"R8:multiple_mouths({n_mouths})")
@@ -168,12 +161,35 @@ def is_non_face_by_rules(spec):
         if "x" in e0 and "x" in e1:
             if abs(e0["x"] - e1["x"]) > NON_FACE_THRESHOLDS["eye_sep_max_px"]:
                 reasons.append("R4:eyes_too_wide_apart")
+        
+        # R9: wrong positions — nose relative to eye row (canvas y grows downward)
+        if n_noses >= 1 and "y" in e0 and "y" in e1:
+            eye_row_y = 0.5 * (float(e0["y"]) + float(e1["y"]))
+            min_dy = NON_FACE_THRESHOLDS["nose_below_eye_min_dy"]
+            tol    = NON_FACE_THRESHOLDS["nose_eye_level_tolerance"]
+
+            for n in s["noses"]:
+                if "y" not in n:
+                    continue
+                tip_y  = float(n["y"])
+                base_y = tip_y + 24  # triangle base
+
+                # (a) whole nose sits ~at eye level (or above)
+                if base_y <= eye_row_y + tol:
+                    reasons.append("R9:wrong_positions(nose_whole_at_eye_level)")
+                    break
+
+                # (b) nose not significantly below the eyes
+                if tip_y <= eye_row_y + min_dy:
+                    reasons.append("R9:wrong_positions(nose_not_significantly_below_eyes)")
+                    break
+
 
     # R6: forbid heart/star eyes (any eye)
-    if any(int(e.get("shape_id", -1)) in (4, 5) for e in s["eyes"]):
-        reasons.append("R6:forbidden_eye_shape(heart_or_star)")
+    if any(int(e.get("shape_id", -1)) in FORBIDDEN_EYE_SHAPE_IDS for e in s["eyes"]):
+        reasons.append("R6:forbidden_eye_shape)")
 
-    # R7: any feature outside the face ellipse (check ALL instances)
+    # R7: any feature outside the face ellipse
     if any(not eye_inside_face(e)   for e in s["eyes"]):
         reasons.append("R7:feature_outside_face(eye)")
     if any(not nose_inside_face(n)  for n in s["noses"]):
@@ -181,7 +197,7 @@ def is_non_face_by_rules(spec):
     if any(not mouth_inside_face(m) for m in s["mouths"]):
         reasons.append("R7:feature_outside_face(mouth)")
 
-    # R8: any feature overlap (pairwise over ALL eyes/noses/mouths)
+    # R8: any feature overlap
     boxes, names = [], []
     for idx, e in enumerate(s["eyes"]):
         if all(k in e for k in ("x", "y", "shape_id", "size")):
@@ -199,6 +215,7 @@ def is_non_face_by_rules(spec):
 
     return (len(reasons) > 0, reasons)
 
+#csv labels- makes a csv file to store labels for each generated image (suggested by chatgpt)
 LABELS_DIR = "dataset"
 os.makedirs(LABELS_DIR, exist_ok=True)
 LABELS_CSV = os.path.join(LABELS_DIR, "labels.csv")
@@ -213,7 +230,9 @@ if not os.path.exists(LABELS_CSV):
         csv.DictWriter(f, fieldnames=LABELS_HEADER).writeheader()
 
 def write_label_row(image_id, spec, label_is_face, reasons):
-    r = spec["r_eye"]; l = spec["l_eye"]
+    # Hardened against missing parts
+    r = spec.get("r_eye") or {"x": 0, "y": 0, "shape_id": -1, "size": 0.0}
+    l = spec.get("l_eye") or {"x": 0, "y": 0, "shape_id": -1, "size": 0.0}
     nose_field = spec.get("nose")
     mouth_field = spec.get("mouth")
     if isinstance(nose_field, list):
@@ -230,15 +249,15 @@ def write_label_row(image_id, spec, label_is_face, reasons):
         "label_is_face": int(label_is_face),
         "non_face_reasons": ";".join(reasons),
 
-        "r_eye_x": round(r["x"], 2),
-        "r_eye_y": round(r["y"], 2),
-        "r_eye_shape_id": int(r["shape_id"]),
-        "r_eye_size": round(float(r["size"]), 3),
+        "r_eye_x": round(float(r.get("x", 0)), 2),
+        "r_eye_y": round(float(r.get("y", 0)), 2),
+        "r_eye_shape_id": int(r.get("shape_id", -1)),
+        "r_eye_size": round(float(r.get("size", 0.0)), 3),
 
-        "l_eye_x": round(l["x"], 2),
-        "l_eye_y": round(l["y"], 2),
-        "l_eye_shape_id": int(l["shape_id"]),
-        "l_eye_size": round(float(l["size"]), 3),
+        "l_eye_x": round(float(l.get("x", 0)), 2),
+        "l_eye_y": round(float(l.get("y", 0)), 2),
+        "l_eye_shape_id": int(l.get("shape_id", -1)),
+        "l_eye_size": round(float(l.get("size", 0.0)), 3),
 
         "nose_x": int(primary_nose.get("x", 0)),
         "nose_y": int(primary_nose.get("y", 0)),
@@ -248,9 +267,7 @@ def write_label_row(image_id, spec, label_is_face, reasons):
     with open(LABELS_CSV, "a", newline="") as f:
         csv.DictWriter(f, fieldnames=LABELS_HEADER).writerow(row)
 
-rEyeX = rEyeY = lEyeX = lEyeY = noseX = noseY = mouthX = mouthY = 0
-
-def rotate_shape(points, angleDeg, cx, cy):
+def rotate_shape(points, angleDeg, cx, cy): #rotation bias
     a = math.radians(angleDeg)
     cosa = math.cos(a)
     sina = math.sin(a)
@@ -263,7 +280,43 @@ def rotate_shape(points, angleDeg, cx, cy):
         out.append(xr); out.append(yr)
     return out
 
-def generate_eye_shapes(eyeCoords, checksList):
+def _sample_eyes(free_eyes=False, inside_face_prob=0.15, mirror_prob=0.30): #Returns rEyeX, rEyeY, lEyeX, lEyeY (pre-invert). 
+    def rand_inside_face(): 
+        while True: #When free_eyes=True (non-faces), eyes can be anywhere on the canvas    
+            x = random.randint(12, CANVAS_W-12)
+            y = random.randint(6,  CANVAS_H-6)
+            if point_inside_face(x, y):
+                return x, y
+
+    def rand_anywhere():
+        return (random.randint(12, CANVAS_W-12),
+                random.randint(6,  CANVAS_H-6))
+
+    if not free_eyes:
+        rEyeCircle = 1025
+        while rEyeCircle > 1024:
+            rEyeX = random.randint(74, 106)
+            rEyeY = random.randint(134, 166)
+            rEyeCircle = ((rEyeX-106)**2)+((rEyeY-134)**2)
+        lEyeX = (2 * FACE_CX) - rEyeX + random.randint(-3,3)
+        lEyeY = rEyeY + random.randint(-3,3)
+        return rEyeX, rEyeY, lEyeX, lEyeY
+
+    if random.random() < inside_face_prob:
+        rEyeX, rEyeY = rand_inside_face() #anywhere inside face
+    else:
+        rEyeX, rEyeY = rand_anywhere() # anywhere on canvas
+
+    if random.random() < mirror_prob:
+        lEyeX = CANVAS_W - rEyeX + random.randint(-10,10)
+        lEyeY = CANVAS_H - rEyeY + random.randint(-10,10)
+    else:
+        lEyeX, lEyeY = (rand_inside_face() if random.random() < inside_face_prob else rand_anywhere())
+
+    return rEyeX, rEyeY, lEyeX, lEyeY
+
+
+def generate_eye_shapes(eyeCoords, checksList, force_shape_id=None): #draws eyes and returns their parameters for labelling
     j = 0
     eyeCheck = random.randint(0,100)  # chance second eye matches first
     previousShape = 0
@@ -279,16 +332,18 @@ def generate_eye_shapes(eyeCoords, checksList):
         sizes.append(random.uniform(0.4, 2.5))
         sizes.append(random.uniform(0.4, 2.5))
 
-    rec = {}  
-
-    for i in range(0,3,2):  
-        if checksList[j] <= 70:
-            eShapeCheck = random.randint(0, 8)
-            if j == 1 and eyeCheck <= 80:
-                eShapeCheck = previousShape  
+    rec = {}
+# draw eyes
+    for i in range(0,3,2):
+        if force_shape_id is not None:
+            eShapeCheck = int(force_shape_id)
         else:
-            eShapeCheck = 0  # oval
-
+            if checksList[j] <= 70:
+                eShapeCheck = random.randint(0, 8)
+                if j == 1 and eyeCheck <= 80:
+                    eShapeCheck = previousShape
+            else:
+                eShapeCheck = 0  # oval
         if eShapeCheck == 0:
             canvas.create_oval((eyeCoords[i]-(12*sizes[j])), (eyeCoords[i+1]+(6*sizes[j])),
                                (eyeCoords[i]+(12*sizes[j])), (eyeCoords[i+1]-(6*sizes[j])))
@@ -356,59 +411,249 @@ def generate_eye_shapes(eyeCoords, checksList):
 
     return rec
 
+#drawing single eye for non face cases where multiple/no eyes are needed
+def _draw_single_eye(cx, cy, force_shape=None, size=None, checks_val=None, prev_shape=None):
+    if checks_val is None:
+        checks_val = random.randint(0,100)
+    if size is None:
+        size = random.uniform(0.4, 2.5)
+
+    if force_shape is not None:
+        eShapeCheck = int(force_shape)
+    else:
+        if checks_val <= 70:
+            eShapeCheck = random.randint(0, 8)
+            if prev_shape is not None and random.randint(0,100) <= 30:
+                eShapeCheck = prev_shape
+        else:
+            eShapeCheck = 0  # oval
+
+    if eShapeCheck == 0:
+        canvas.create_oval((cx-(12*size)), (cy+(6*size)), (cx+(12*size)), (cy-(6*size)))
+    if eShapeCheck == 1:
+        canvas.create_oval((cx-(9*size)), (cy+(9*size)), (cx+(9*size)), (cy-(9*size)))
+    if eShapeCheck == 2:
+        canvas.create_polygon((cx-(9*size)), (cy+(9*size)), (cx-(9*size)), (cy-(9*size)),
+                              (cx+(9*size)), (cy-(9*size)), (cx+(9*size)), (cy+(9*size)),
+                              outline="black", fill="")
+    if eShapeCheck == 3:
+        canvas.create_polygon((cx-(12*size)), (cy+(6*size)), (cx-(12*size)), (cy-(6*size)),
+                              (cx+(12*size)), (cy-(6*size)), (cx+(12*size)), (cy+(6*size)),
+                              outline="black", fill="")
+    if eShapeCheck == 4:
+        canvas.create_line((cx-(8*size)), cy, (cx-(9*size)), (cy-(4*size)), (cx-(5*size)), (cy-(9*size)),
+                           cx, (cy-(5*size)), smooth=1)
+        canvas.create_line((cx+(8*size)), cy, (cx+(9*size)), (cy-(4*size)), (cx+(5*size)), (cy-(9*size)),
+                           cx, (cy-(5*size)), smooth=1)
+        canvas.create_line((cx-(8*size)), cy, cx, (cy+(9*size)), (cx+(8*size)), cy)
+    if eShapeCheck == 5:
+        canvas.create_polygon(cx, (cy-(9*size)), (cx+(2*size)), (cy-(3*size)), (cx+(9*size)), (cy-(3*size)),
+                              (cx+(3*size)), (cy+(1*size)), (cx+(5*size)), (cy+(7*size)), cx, (cy+(4*size)),
+                              (cx-(5*size)), (cy+(7*size)), (cx-(3*size)), (cy+(1*size)), (cx-(9*size)), (cy-(3*size)),
+                              (cx-(2*size)), (cy-(3*size)), outline="black", fill="")
+    if eShapeCheck == 6:
+        canvas.create_arc((cx-(12*size)), (cy-(12*size)), (cx+(12*size)), (cy+(12*size)), start=0, extent=-180)
+    if eShapeCheck == 7:
+        canvas.create_line((cx-(10*size)), cy, (cx+(10*size)), cy)
+    if eShapeCheck == 8:
+        canvas.create_line((cx-(12*size)), (cy-(6*size)), cx, (cy+(6*size)), (cx+(12*size)), (cy-(6*size)), smooth=1)
+
+    return {"x": cx, "y": cy, "shape_id": int(eShapeCheck), "size": float(size)}
+
+#feature count
+def _choose_feature_counts_for_nonface():
+    # Eyes unchanged-ish but duplicate noses/mouths
+    n_eyes   = random.choices([0, 1, 2, 3, 4], weights=[12, 20, 38, 20, 10], k=1)[0]
+    n_noses  = random.choices([0, 1, 2],       weights=[10, 50, 40],         k=1)[0]  # was [20,70,10]
+    n_mouths = random.choices([0, 1, 2],       weights=[10, 45, 45],         k=1)[0]  # was [20,70,10]
+    return n_eyes, n_noses, n_mouths
+
+def _choose_plausible_count_violation():
+    # chances of each type of plausible count violation
+    mode = random.choices(
+        ["eyes_extra", "eyes_missing", "nose_missing", "mouth_missing", "nose_double", "mouth_double"],
+        weights=[35, 15, 10, 10, 15, 15], k=1  # was [45,20,12,12,6,5]
+    )[0]
+    n_eyes, n_noses, n_mouths = 2, 1, 1
+    if mode == "eyes_extra":     n_eyes = random.choice([3, 4])
+    elif mode == "eyes_missing": n_eyes = random.choice([0, 1])
+    elif mode == "nose_missing": n_noses = 0
+    elif mode == "mouth_missing": n_mouths = 0
+    elif mode == "nose_double":   n_noses = 2
+    elif mode == "mouth_double":  n_mouths = 2
+    return n_eyes, n_noses, n_mouths
+
+#reasons for labels
+def generator_reasons(spec):
+    rs = []
+    meta = spec.get("_gen_meta", {})
+    if meta.get("forbidden_eye_shapes"): rs.append("GEN:forbidden_eye_shapes")
+    if meta.get("free_eyes"): rs.append("GEN:random_eyes_anywhere")
+    if meta.get("free_nm"):   rs.append("GEN:random_nose_mouth_anywhere")
+    if meta.get("n_eyes", 2)   != 2: rs.append(f"GEN:eyes_count({meta.get('n_eyes')})")
+    if meta.get("n_noses", 1)  != 1: rs.append(f"GEN:noses_count({meta.get('n_noses')})")
+    if meta.get("n_mouths", 1) != 1: rs.append(f"GEN:mouths_count({meta.get('n_mouths')})")
+    if meta.get("counts_plausible_positions"): rs.append("GEN:counts_plausible_positions")
+    if meta.get("blank_face"): rs.append("GEN:blank_face")
+    return rs
+
+# Feature generator
 def generate_features(rEyeX, rEyeY, lEyeX, lEyeY,
                       noseX, noseY, mouthX, mouthY, checksList,
                       nose_angle=None, mouth_start=None, mouth_extent=None,
-                      forced_non_face=False):
-    eyeCoords = [rEyeX, rEyeY, lEyeX, lEyeY]
-    eye_spec = generate_eye_shapes(eyeCoords, checksList)
+                      forced_non_face=False,
+                      n_eyes=2, n_noses=1, n_mouths=1, free_eyes=False,
+                      plausible_counts_positions=False, force_eye_shape_id=None):
+    
+    # EYES 
+    eyes_entries = []
 
+    # base two eyes
+    if n_eyes >= 2:
+        eyeCoords = [rEyeX, rEyeY, lEyeX, lEyeY]
+        eye_spec_pair = generate_eye_shapes(eyeCoords, checksList, force_shape_id=force_eye_shape_id)
+        eyes_entries.append(eye_spec_pair["r_eye"])
+        eyes_entries.append(eye_spec_pair["l_eye"])
+    elif n_eyes == 1:
+        entry = _draw_single_eye(rEyeX, rEyeY, checks_val=checksList[0])
+        eyes_entries.append(entry)
 
-    nose_pts = [noseX, noseY, (noseX-6), (noseY+24), (noseX+6), (noseY+24)]
-    if nose_angle is not None:
-        cx, cy = noseX, noseY + 16  
-        nose_pts = rotate_shape(nose_pts, nose_angle, cx, cy)
-    canvas.create_polygon(*nose_pts, outline="black", fill="")
+    # extra eyes 
+    prev_shape = eyes_entries[-1]["shape_id"] if eyes_entries else None
+    eye_row_y = None
+    if plausible_counts_positions and len(eyes_entries) >= 1:
+        eye_row_y = int(0.5*(eyes_entries[0]["y"] + eyes_entries[1]["y"])) if len(eyes_entries) >= 2 else int(eyes_entries[0]["y"])
+    for k in range(max(0, n_eyes - 2)):
+        if plausible_counts_positions and eye_row_y is not None:
+            ey = eye_row_y + random.randint(-3, 3)
+            attempts = 0
+            while True:
+                ex = random.randint(FACE_LEFT+12, FACE_RIGHT-12)
+                if all(abs(ex - e["x"]) > 14 for e in eyes_entries) and point_inside_face(ex, ey):
+                    break
+                attempts += 1
+                if attempts > 50: break
+        elif free_eyes:
+            ex = random.randint(12, CANVAS_W-12)
+            ey = random.randint(6,  CANVAS_H-6)
+        else:
+            while True:
+                ex = random.randint(FACE_LEFT, FACE_RIGHT)
+                ey = random.randint(FACE_TOP,  FACE_BOTTOM)
+                if point_inside_face(ex, ey): break
+        entry = _draw_single_eye(ex, ey, checks_val=checksList[min(k,1)], prev_shape=prev_shape)
+        prev_shape = entry["shape_id"]
+        eyes_entries.append(entry)
 
-    if mouth_start is None:
-        mouth_start = 0
-    if mouth_extent is None:
-        mouth_extent = -180
-    canvas.create_arc((mouthX-16), mouthY, (mouthX+16), (mouthY+18),
-                      start=mouth_start, extent=mouth_extent)
+    # NOSE(S) 
+    def _draw_one_nose(x, y, ang):
+        nose_pts = [x, y, (x-6), (y+24), (x+6), (y+24)]
+        if ang is not None:
+            cx, cy = x, y + 16
+            pts = rotate_shape(nose_pts, ang, cx, cy)
+        else:
+            pts = nose_pts
+        canvas.create_polygon(*pts, outline="black", fill="")
+        return {"x": x, "y": y, "shape": "triangle", "angle": float(ang or 0.0)}
 
-    #assemble and return spec
+    noses = []
+    if n_noses >= 1:
+        noses.append(_draw_one_nose(noseX, noseY, nose_angle))
+    for _ in range(max(0, n_noses - 1)):
+        if plausible_counts_positions:
+            nx = max(6, min(CANVAS_W-6, noseX + random.randint(-12, 12)))
+            ny = max(6, min(CANVAS_H-24, noseY + random.randint(-8, 8)))
+            tries = 0
+            while not point_inside_face(nx, ny) and tries < 30:
+                nx = max(6, min(CANVAS_W-6, noseX + random.randint(-12, 12)))
+                ny = max(6, min(CANVAS_H-24, noseY + random.randint(-8, 8)))
+                tries += 1
+            nang = None
+        else:
+            nx = random.randint(6, CANVAS_W-6)
+            ny = random.randint(6, CANVAS_H-24)
+            nang = random.uniform(0, 360) if forced_non_face else None
+        noses.append(_draw_one_nose(nx, ny, nang))
+
+    # MOUTH(S) 
+    def _draw_one_mouth(x, y, start, extent):
+        canvas.create_arc((x-16), y, (x+16), (y+18), start=start if start is not None else 0,
+                          extent=extent if extent is not None else -180)
+        return {"x": x, "y": y, "shape": "arc",
+                "start": int(start if start is not None else 0),
+                "extent": int(extent if extent is not None else -180)}
+
+    mouths = []
+    if n_mouths >= 1:
+        mouths.append(_draw_one_mouth(mouthX, mouthY, mouth_start, mouth_extent))
+    for _ in range(max(0, n_mouths - 1)):
+        if plausible_counts_positions:
+            mx = max(16, min(CANVAS_W-16, mouthX + random.randint(-12, 12)))
+            my = max(0,  min(CANVAS_H-18, mouthY + random.randint(-18, 18)))
+            tries = 0
+            while not point_inside_face(mx, my+9) and tries < 30:
+                mx = max(16, min(CANVAS_W-16, mouthX + random.randint(-12, 12)))
+                my = max(0,  min(CANVAS_H-18, mouthY + random.randint(-18, 18)))
+                tries += 1
+            mstart = 0; mext = -180
+        else:
+            mx = random.randint(16, CANVAS_W-16)
+            my = random.randint(0,  CANVAS_H-18)
+            mstart = random.randint(0, 359) if forced_non_face else 0
+            mext   = random.choice([180, -180]) if forced_non_face else -180
+        mouths.append(_draw_one_mouth(mx, my, mstart, mext))
+    # spec (labelling)
     spec = {
-        "r_eye": eye_spec["r_eye"],
-        "l_eye": eye_spec["l_eye"],
-        "eyes": [eye_spec["r_eye"], eye_spec["l_eye"]],  # add list for counting
-        "nose": {"x": noseX, "y": noseY, "shape": "triangle", "angle": float(nose_angle or 0.0)},
-        "mouth": {"x": mouthX, "y": mouthY, "shape": "arc",
-                  "start": int(mouth_start), "extent": int(mouth_extent)},
+        "eyes": eyes_entries,
+        "r_eye": eyes_entries[0] if len(eyes_entries) > 0 else None,
+        "l_eye": eyes_entries[1] if len(eyes_entries) > 1 else None,
+        "nose": noses if len(noses) != 1 else noses[0],
+        "mouth": mouths if len(mouths) != 1 else mouths[0],
         "_forced_non_face": bool(forced_non_face),
+        "_gen_meta": {
+            "free_nm": bool(forced_non_face),
+            "free_eyes": bool(free_eyes),
+            "n_eyes": int(n_eyes), "n_noses": int(n_noses), "n_mouths": int(n_mouths),
+            "counts_plausible_positions": bool(plausible_counts_positions)
+        }
     }
     return spec
+# where features can be placed in faces
+def allowed_positions(rEyeX, rEyeY, lEyeX, lEyeY, noseX, noseY, mouthX, mouthY,
+                      free_nm=False, free_eyes=False, n_eyes=2, n_noses=1, n_mouths=1,
+                      plausible_counts_positions=False, force_eye_shape_id=None):
+    # free eyes/nose/mouth means anywhere on canvas (non-face)
+    if not free_eyes:
+        rEyeCircle = 1025
+        while rEyeCircle > 1024:
+            rEyeX = random.randint(74, 106)
+            rEyeY = random.randint(134, 166)
+            rEyeCircle = ((rEyeX - 106)**2) + ((rEyeY - 134)**2)
+        lEyeX = (2 * FACE_CX) - rEyeX + random.randint(-3, 3)
+        lEyeY = rEyeY + random.randint(-3, 3)
+    else:
+        rEyeX, rEyeY, lEyeX, lEyeY = _sample_eyes(free_eyes=True)
 
-def allowed_positions(rEyeX, rEyeY, lEyeX, lEyeY, noseX, noseY, mouthX, mouthY, free_nm=False):
-    rEyeCircle = 1025
-    while rEyeCircle > 1024:
-        rEyeX = random.randint(74, 106)
-        rEyeY = random.randint(134, 166)
-        rEyeCircle = ((rEyeX-106)**2)+((rEyeY-134)**2)
-
+    # symmetry helper (uses inverted coordinates)
     rEyeYinvert = CANVAS_H - rEyeY
-
-    lEyeX = CANVAS_W - rEyeX + random.randint(-3,3)
-    lEyeYinvert = rEyeYinvert + random.randint(-3,3)
+    lEyeYinvert = CANVAS_H - lEyeY
 
     if not free_nm:
-        
+        eye_row_pre = int(0.5 * (rEyeY + lEyeY))
+        desired_gap_low, desired_gap_high = 12, 36
+        available_max_gap = max(8, eye_row_pre - (FACE_TOP + 24))
+        gap_high = min(desired_gap_high, available_max_gap)
+        gap_low  = min(desired_gap_low, gap_high)
+        gap = int(gap_high) if gap_high < gap_low else random.randint(int(gap_low), int(gap_high))
+
         noseX = random.randint(122, 134)
-        noseY = random.randint(110, (rEyeY-10))
+        noseY = eye_row_pre - gap
         noseYinvert = CANVAS_H - noseY
 
-        mouthX = random.randint(122,134)
-        mouthY = random.randint(64, (noseY-32))
+        mouthX = random.randint(122, 134)
+        mouthY_low  = FACE_TOP + 32
+        mouthY_high = max(mouthY_low, noseY - 24)
+        mouthY = random.randint(mouthY_low, mouthY_high) if mouthY_high >= mouthY_low else mouthY_low
         mouthYinvert = CANVAS_H - mouthY
 
         nose_angle = None
@@ -416,10 +661,8 @@ def allowed_positions(rEyeX, rEyeY, lEyeX, lEyeY, noseX, noseY, mouthX, mouthY, 
         mouth_extent = -180
         forced_non_face = False
     else:
-     
         noseX = random.randint(6, CANVAS_W-6)
-        noseYinvert = random.randint(6, CANVAS_H-24)  
-
+        noseYinvert = random.randint(6, CANVAS_H-24)
         mouthX = random.randint(16, CANVAS_W-16)
         mouthYinvert = random.randint(0, CANVAS_H-18)
 
@@ -433,10 +676,47 @@ def allowed_positions(rEyeX, rEyeY, lEyeX, lEyeY, noseX, noseY, mouthX, mouthY, 
     return generate_features(rEyeX, rEyeYinvert, lEyeX, lEyeYinvert,
                              noseX, noseYinvert, mouthX, mouthYinvert, checksList,
                              nose_angle=nose_angle, mouth_start=mouth_start, mouth_extent=mouth_extent,
-                             forced_non_face=forced_non_face)
+                             forced_non_face=forced_non_face,
+                             n_eyes=n_eyes, n_noses=n_noses, n_mouths=n_mouths, free_eyes=free_eyes,
+                             plausible_counts_positions=plausible_counts_positions, force_eye_shape_id=force_eye_shape_id)
 
 
-def create_random(rEyeX, rEyeY, lEyeX, lEyeY, noseX, noseY, mouthX, mouthY):
+def generate_plausible_count_violation_nonface():
+# non faces which look like they can be normal but have wrong counts of features
+    n_eyes, n_noses, n_mouths = _choose_plausible_count_violation()
+    spec = allowed_positions(
+        rEyeX=0, rEyeY=0, lEyeX=0, lEyeY=0, noseX=0, noseY=0, mouthX=0, mouthY=0,
+        free_nm=False, free_eyes=False,               # face-like placements
+        n_eyes=n_eyes, n_noses=n_noses, n_mouths=n_mouths,
+        plausible_counts_positions=True
+    )
+    return spec
+# correct faces but forbidden eye shapes
+def generate_plausible_forbidden_eye_nonface():
+    FORBIDDEN_IDS = (2, 3, 4, 5, 7)  # keep in sync with R6 tuple
+    force_id = random.choice(FORBIDDEN_IDS)
+    spec = allowed_positions(
+        rEyeX=0, rEyeY=0, lEyeX=0, lEyeY=0, noseX=0, noseY=0, mouthX=0, mouthY=0,
+        free_nm=False, free_eyes=False,      # face-like placements
+        n_eyes=2, n_noses=1, n_mouths=1,
+        plausible_counts_positions=False,
+        force_eye_shape_id=force_id
+    )
+    spec.setdefault("_gen_meta", {})["forbidden_eye_shapes"] = True
+    return spec
+# no features
+def generate_blank_nonface():
+    return {
+        "eyes": [],
+        "r_eye": None,
+        "l_eye": None,
+        "nose": None,
+        "mouth": None,
+        "_forced_non_face": True,
+        "_gen_meta": {"blank_face": True}
+    }
+
+def create_random(rEyeX, rEyeY, lEyeX, lEyeY, noseX, noseY, mouthX, mouthY): # draws features at random positions within face
     while ((((rEyeX)-128)**2)/(60**2)) + ((((rEyeY)-128)**2)/(86**2)) >= 1:
         rEyeX = random.randint (52,204)
         rEyeY = random.randint (32,224)
@@ -454,16 +734,20 @@ def create_random(rEyeX, rEyeY, lEyeX, lEyeY, noseX, noseY, mouthX, mouthY):
         mouthY = random.randint (32,224)
     canvas.create_arc((mouthX-16), mouthY, (mouthX+16), (mouthY+18), start=0, extent=-180)
 
-#generation
+# probabilities of different non-face types and batch/grid settings (due to change I'm just checking that each type is generated properly)
 BATCH_SIZE = 10
-GRID_ROWS, GRID_COLS = 2, 5   
-NON_FACE_PROB = 0.5           
+GRID_ROWS, GRID_COLS = 2, 5
+NON_FACE_PROB = 0.5
+PLAUSIBLE_COUNT_NONFACE_PROB = 0.35  # looks right but non face due to counts
+BLANK_NONFACE_PROB = 0.10            # head only, no features
+FORBIDDEN_EYES_NONFACE_PROB = 0.20
 
-def render_one(cv, image_id):
-    """Randomly generate either a Face (passes rules) or a Non-Face (violates)."""
+
+def render_one(cv, image_id): # Randomly generate either a Face (passes rules) or a Non-Face (violates).
     global canvas
-    canvas = cv  
+    canvas = cv
     cv.delete("all")
+    # draw the head first (always)
     cv.create_oval(FACE_LEFT, FACE_TOP, FACE_RIGHT, FACE_BOTTOM)
 
     target_non_face = (random.random() < NON_FACE_PROB)
@@ -472,44 +756,68 @@ def render_one(cv, image_id):
     reasons = []
 
     if target_non_face:
-        if random.random() < 0.7:
-            spec = allowed_positions(rEyeX, rEyeY, lEyeX, lEyeY, noseX, noseY, mouthX, mouthY, free_nm=True)
+        # blank face
+        if random.random() < BLANK_NONFACE_PROB:
+            spec = generate_blank_nonface()
             non_face, reasons = is_non_face_by_rules(spec)
-            if spec.get("_forced_non_face"):
-                non_face = True
-                reasons += ["GEN:free_nose_mouth_anywhere"]
+            reasons = generator_reasons(spec) + reasons
+        # right positions but wrong numbers
+        elif random.random() < PLAUSIBLE_COUNT_NONFACE_PROB:
+            spec = generate_plausible_count_violation_nonface()
+            non_face, reasons = is_non_face_by_rules(spec)
+            reasons = generator_reasons(spec) + reasons
+        # right positions but forbidden eye shapes
+        elif random.random() < PLAUSIBLE_COUNT_NONFACE_PROB:
+            spec = generate_plausible_forbidden_eye_nonface()
+            non_face, reasons = is_non_face_by_rules(spec)
+            reasons = generator_reasons(spec) + reasons
+
+        # non face possibilities
         else:
-            for _ in range(12):
-                cv.delete("all")
-                cv.create_oval(FACE_LEFT, FACE_TOP, FACE_RIGHT, FACE_BOTTOM)
+            n_eyes, n_noses, n_mouths = _choose_feature_counts_for_nonface()
 
-                spec = allowed_positions(rEyeX, rEyeY, lEyeX, lEyeY, noseX, noseY, mouthX, mouthY, free_nm=False)
+            # all random places
+            if random.random() < 0.5:
+                spec = allowed_positions(0,0,0,0,0,0,0,0,
+                                         free_nm=True, free_eyes=True,
+                                         n_eyes=n_eyes, n_noses=n_noses, n_mouths=n_mouths)
                 non_face, reasons = is_non_face_by_rules(spec)
-                if non_face:
-                    break
-            if not non_face:
-                cv.delete("all")
-                cv.create_oval(FACE_LEFT, FACE_TOP, FACE_RIGHT, FACE_BOTTOM)
+            else:
+                # good positions for nose and mouth but with randomly placed eyes
+                for _ in range(12):
+                    cv.delete("all")
+                    cv.create_oval(FACE_LEFT, FACE_TOP, FACE_RIGHT, FACE_BOTTOM)
+                    spec = allowed_positions(0,0,0,0,0,0,0,0,
+                                             free_nm=False, free_eyes=True,
+                                             n_eyes=n_eyes, n_noses=n_noses, n_mouths=n_mouths)
+                    non_face, reasons = is_non_face_by_rules(spec)
+                    if non_face:
+                        break
+                if not non_face:
+                    cv.delete("all")
+                    cv.create_oval(FACE_LEFT, FACE_TOP, FACE_RIGHT, FACE_BOTTOM)
+                    spec = allowed_positions(0,0,0,0,0,0,0,0,
+                                             free_nm=True, free_eyes=True,
+                                             n_eyes=n_eyes, n_noses=n_noses, n_mouths=n_mouths)
+                    non_face, reasons = is_non_face_by_rules(spec)
 
-                spec = allowed_positions(rEyeX, rEyeY, lEyeX, lEyeY, noseX, noseY, mouthX, mouthY, free_nm=True)
-                non_face, reasons = is_non_face_by_rules(spec)
-                if spec.get("_forced_non_face"):
-                    non_face = True
-                    reasons += ["GEN:free_nose_mouth_anywhere"]
+            reasons = generator_reasons(spec) + reasons
+
     else:
+        # faces
         for _ in range(20):
-            # clear before each attempt 
             cv.delete("all")
             cv.create_oval(FACE_LEFT, FACE_TOP, FACE_RIGHT, FACE_BOTTOM)
-
-            spec = allowed_positions(rEyeX, rEyeY, lEyeX, lEyeY, noseX, noseY, mouthX, mouthY, free_nm=False)
+            spec = allowed_positions(0,0,0,0,0,0,0,0,
+                                     free_nm=False, free_eyes=False,
+                                     n_eyes=2, n_noses=1, n_mouths=1)
             non_face, reasons = is_non_face_by_rules(spec)
-            if not non_face: 
+            if not non_face:
                 break
 
     label_is_face = (not non_face)
     label_text = "Face" if label_is_face else "Non-Face"
-    cv.create_rectangle(6, 6, 106, 28, fill="#f0f0f0", outline="")
+    cv.create_rectangle(6, 6, 140, 28, fill="#f0f0f0", outline="")
     cv.create_text(12, 17, anchor="w",
                    text=label_text,
                    font=("TkDefaultFont", 11, "bold"),
@@ -517,30 +825,29 @@ def render_one(cv, image_id):
 
     write_label_row(image_id, spec, label_is_face, reasons)
 
-def generate_batch(start_id=0):
+#UI 
+def generate_batch(start_id = 0):
     for idx, cv in enumerate(canvases):
         render_one(cv, start_id + idx)
     root.update_idletasks()
     root.update()
 
-# UI
-root = tkinter.Tk()
-root.title("Face / Non-Face — 10 at a time")
-
+root = tkinter.Tk() # main window
+root.title("10 at a time")
 container = tkinter.Frame(root)
 container.pack(padx=8, pady=8)
 canvases = []
-for r in range(GRID_ROWS):
-    for c in range(GRID_COLS):
+for r in range(2): # grid rows
+    for c in range(5):
         cv = tkinter.Canvas(container, bg="white", height=CANVAS_H, width=CANVAS_W,
                             highlightthickness=1, highlightbackground="#ddd")
         cv.grid(row=r, column=c, padx=4, pady=4)
         canvases.append(cv)
 
-controls = tkinter.Frame(root)
-controls.pack(pady=(0,8))
-batch_counter = {"n": 0}
-def on_next_batch():
+controls = tkinter.Frame(root) # control buttons
+controls.pack(pady=(0,8)) 
+batch_counter = {"n": 0} 
+def on_next_batch(): # next batch button callback
     start_id = batch_counter["n"] * BATCH_SIZE
     generate_batch(start_id=start_id)
     batch_counter["n"] += 1
@@ -548,4 +855,5 @@ def on_next_batch():
 btn = tkinter.Button(controls, text=f"Generate {BATCH_SIZE}", command=on_next_batch)
 btn.grid(row=0, column=0, padx=6)
 on_next_batch()
+# start the UI loop
 root.mainloop()
