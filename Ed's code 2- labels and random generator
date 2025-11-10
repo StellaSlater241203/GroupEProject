@@ -507,7 +507,6 @@ def generate_features(rEyeX, rEyeY, lEyeX, lEyeY,
     
     # EYES 
     eyes_entries = []
-
     # base two eyes
     if n_eyes >= 2:
         eyeCoords = [rEyeX, rEyeY, lEyeX, lEyeY]
@@ -716,24 +715,6 @@ def generate_blank_nonface():
         "_gen_meta": {"blank_face": True}
     }
 
-def create_random(rEyeX, rEyeY, lEyeX, lEyeY, noseX, noseY, mouthX, mouthY): # draws features at random positions within face
-    while ((((rEyeX)-128)**2)/(60**2)) + ((((rEyeY)-128)**2)/(86**2)) >= 1:
-        rEyeX = random.randint (52,204)
-        rEyeY = random.randint (32,224)
-    canvas.create_oval((rEyeX-12), (rEyeY+6), (rEyeX+12), (rEyeY-6))
-    while ((((lEyeX)-128)**2)/(60**2)) + ((((lEyeY)-128)**2)/(86**2)) >= 1:
-        lEyeX = random.randint (52,204)
-        lEyeY = random.randint (32,224)
-    canvas.create_oval((lEyeX-12), (lEyeY+6), (lEyeX+12), (lEyeY-6))
-    while ((((noseX)-128)**2)/(66**2)) + ((((noseY+12)-128)**2)/(86**2)) >= 1:
-        noseX = random.randint (52,204)
-        noseY = random.randint (32,224)
-    canvas.create_polygon(noseX, noseY, (noseX-6), (noseY+24), (noseX+6), (noseY+24), outline="black", fill="")
-    while ((((mouthX)-128)**2)/(56**2)) + ((((mouthY+9)-128)**2)/(76**2)) >= 1:
-        mouthX = random.randint (52,204)
-        mouthY = random.randint (32,224)
-    canvas.create_arc((mouthX-16), mouthY, (mouthX+16), (mouthY+18), start=0, extent=-180)
-
 # probabilities of different non-face types and batch/grid settings (due to change I'm just checking that each type is generated properly)
 BATCH_SIZE = 10
 GRID_ROWS, GRID_COLS = 2, 5
@@ -855,5 +836,6 @@ def on_next_batch(): # next batch button callback
 btn = tkinter.Button(controls, text=f"Generate {BATCH_SIZE}", command=on_next_batch)
 btn.grid(row=0, column=0, padx=6)
 on_next_batch()
+
 # start the UI loop
 root.mainloop()
