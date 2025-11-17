@@ -3,6 +3,7 @@ import random
 import math
 import os
 import csv
+from PIL import ImageGrab
 
 # Constants for face area
 CANVAS_W, CANVAS_H = 256, 256
@@ -766,6 +767,23 @@ def generate_batch(start_id = 0):
     root.update_idletasks()
     root.update()
 
+#Save canvas images which have been generated
+def save_images():
+    root.update_idletasks()
+    for idx, cv in enumerate(canvases):
+        image_id = (batch_counter["n"] - 1) * BATCH_SIZE + idx
+        filename = os.path.join(LABELS_DIR, f"image_{image_id:05d}.png")
+        # | if images include the bowndry box, change scale 
+        # v
+        scale = 2
+        x = cv.winfo_rootx() * scale
+        y = cv.winfo_rooty() * scale
+        x1 = x + cv.winfo_width() * scale
+        y1 = y + cv.winfo_height() * scale
+        box = (x, y, x1, y1)
+        ImageGrab.grab(box).save(filename)
+    print(f"Saved images for batch {batch_counter['n'] - 1}")
+
 root = tkinter.Tk() # main window
 root.title("10 at a time")
 container = tkinter.Frame(root)
@@ -788,6 +806,8 @@ def on_next_batch(): # next batch button callback
 
 btn = tkinter.Button(controls, text=f"Generate {BATCH_SIZE}", command=on_next_batch)
 btn.grid(row=0, column=0, padx=6)
+button = tkinter.Button(root, text='Save Images', command = lambda: save_images())
+button.pack()
 on_next_batch()
 
 # start the UI loop
