@@ -1,0 +1,215 @@
+import numpy as np
+import matplotlib.pyplot as plt
+#n_features = 4096 #64x64 or change to whatever size the images are
+nn_architecture = [ #layers
+    {"input_dim": 2, "output_dim": 64, "activation": "relu"}, #layer 1
+    {"input_dim": 64, "output_dim": 32, "activation": "relu"}, # layer 2
+    {"input_dim": 32, "output_dim": 1, "activation": "sigmoid"}, # output
+]
+#list where each item is describing the basic parameters of a single network layer
+#input_dim is the size of a signal vector and output_dim is the size of the activation vector obtained
+#activation is the activation function to be used inside the layer
+#the vector coming out of one layer is also the input for the next layer so therefore:
+def init_layers(nn_architecture, seed = 99): #this notation keeps the objects consistent across all layers
+    np.random.seed(seed)
+    number_of_layers = len(nn_architecture)
+    params_values = {}
+
+    for idx, layer in enumerate(nn_architecture):
+        layer_idx = idx + 1
+        layer_input_size = layer["input_dim"]
+        layer_output_size = layer["output_dim"]
+        params_values['W' + str(layer_idx)] = np.random.randn(
+            layer_output_size, layer_input_size)*0.1
+        params_values['b' + str(layer_idx)] = np.zeros((layer_output_size, 1))
+    return params_values # can set biases to initialise as zeros instead if the training isn't going as well
+#^this function would initiate the values of the weight matrices W and bias vectors b
+
+#Activation functions (sigmoid and relu and their derivatives)
+def sigmoid(x):
+    return 1 / (1 + np.exp(-x))
+
+def relu(x):
+    return np.maximum(0, x)
+
+def sigmoid_deriv(dA, x):
+    sig = sigmoid(x)
+    return dA*sig*(1-sig)
+
+def relu_deriv(dA, x):
+    dx = np.array(dA, copy=True)
+    dx[x <= 0] = 0;
+    return dx;
+
+#single layer forward propogation step
+def single_layer_forward_prop(A_prev, W_curr, b_curr, activation = "relu"):
+    Z_curr = np.dot(W_curr, A_prev) + b_curr
+    if activation == "relu":
+        activation_func = relu 
+    elif activation == "sigmoid":
+        activation_func = sigmoid
+    else:
+        raise Exception('Non-supported activation function')
+    
+    return activation_func(Z_curr), Z_curr
+
+#full forward propogation step 
+def full_forward_prop(X, params_values, nn_architecture):
+    memory = {}
+    A_curr = X
+    for idx, layer in enumerate(nn_architecture):
+        layer_idx = idx + 1
+        A_prev = A_curr
+        activ_function_curr = layer["activation"]
+        W_curr = params_values["W" + str(layer_idx)]
+        b_curr = params_values["b" + str(layer_idx)]
+        A_curr, Z_curr = single_layer_forward_prop(A_prev, W_curr, b_curr, activ_function_curr)
+# store
+        memory["A" + str(idx)] = A_prev #A0 = X
+        memory["Z" + str(layer_idx)] = Z_curr
+    return A_curr, memory #A_curr is used as Y_hat
+
+#calculating the value of the loss function and accuracy using binary entropy
+def get_cost_value(Y_hat, Y):
+    m = Y_hat.shape[1]
+    eps = 1e-8 #cap Y_hat to avoid log0
+    Y_hat_new = np.clip(Y_hat, eps, 1 - eps)
+    cost = -1/m * (np.dot(Y, np.log(Y_hat_new).T) + np.dot(1-Y, np.log(1-Y_hat_new).T))
+    return np.squeeze(cost)
+
+def convert_prob_into_class(Y_hat, threshold = 0.5):
+    return (Y_hat > threshold).astype(int)
+def get_accuracy_value(Y_hat, Y):
+    Y_hat_ = convert_prob_into_class(Y_hat)
+    return (Y_hat_ == Y).all(axis=0).mean()
+
+#single layer backward proposition: for each loss works out how much the weight, bias and input affected the loss
+#then htose weights can be adjusted to make for smaller losses on the next run
+def single_layer_backward_prop(dA_curr, W_curr, b_curr, Z_curr, A_prev, activation="relu"):
+    m = A_prev.shape[1]
+    if activation == "relu":
+        dZ_curr = relu_deriv(dA_curr, Z_curr)
+    elif activation == "sigmoid":
+        dZ_curr = sigmoid_deriv(dA_curr, Z_curr)
+    else:
+        raise Exception("Non-supported activation function")
+    
+    dW_curr = np.dot(dZ_curr, A_prev.T) / m
+    db_curr = np.sum(dZ_curr, axis=1, keepdims=True) / m
+    dA_prev = np.dot(W_curr.T, dZ_curr)
+    
+    return dA_prev, dW_curr, db_curr
+
+#full backward propogation step- calculates the gradient of the cost function
+#uses the chain rule
+def full_backward_propogation(Y_hat, Y, memory, params_values, nn_architecture):
+    grads_values = {}
+    m = Y.shape[1]
+    Y = Y.reshape(Y_hat.shape)
+    # derivative of cost wrt A_L for binary cross-entropy
+    dA_prev = -(np.divide(Y, Y_hat) - np.divide(1 - Y, 1 - Y_hat))
+
+    for layer_idx_prev, layer in reversed(list(enumerate(nn_architecture))):
+        layer_idx_curr = layer_idx_prev + 1
+        activation_curr = layer["activation"]
+
+        dA_curr = dA_prev
+        A_prev = memory["A" + str(layer_idx_prev)]
+        Z_curr = memory["Z" + str(layer_idx_curr)]
+        W_curr = params_values["W" + str(layer_idx_curr)]
+        b_curr = params_values["b" + str(layer_idx_curr)]
+
+        dA_prev, dW_curr, db_curr = single_layer_backward_prop(
+            dA_curr, W_curr, b_curr, Z_curr, A_prev, activation_curr
+        )
+
+        grads_values["dW" + str(layer_idx_curr)] = dW_curr
+        grads_values["db" + str(layer_idx_curr)] = db_curr
+
+    return grads_values
+
+#optimization algorithm- updating the parameters' values using gradient optimization
+def update(params_values, grads_values, nn_architecture, learning_rate):
+    for idx, layer in enumerate(nn_architecture):
+        layer_idx = idx + 1
+        params_values["W" + str(layer_idx)] -= learning_rate * grads_values["dW" + str(layer_idx)]
+        params_values["b" + str(layer_idx)] -= learning_rate * grads_values["db" + str(layer_idx)]
+    return params_values
+
+#training the model
+def train(X, Y, nn_architecture, epochs, learning_rate):
+    params_values = init_layers(nn_architecture, 2)
+    cost_history = []
+    accuracy_history = []
+    for i in range(epochs):
+        Y_hat, cache = full_forward_prop(X, params_values, nn_architecture)
+        cost = get_cost_value(Y_hat, Y)
+        accuracy = get_accuracy_value(Y_hat, Y)
+        cost_history.append(cost)
+        accuracy_history.append(accuracy)
+
+        grads_values = full_backward_propogation(Y_hat, Y, cache, params_values, nn_architecture)
+        params_values = update(params_values, grads_values, nn_architecture, learning_rate)
+        if i % 100 == 0: #updates me on the progress of the model every 100 epochs
+            print(f"Epoch {i}: cost = {cost:.4f}, acc = {accuracy:.4f}")
+    return params_values, cost_history, accuracy_history
+
+#________________________________________________________
+#SAMPLE DATASET- BLOBS ON A PAGE SORTING- SWAP FOR FACES
+#________________________________________________________
+def sample_data():
+    np.random.seed(0)
+    n_each = 200
+    # Class 1: centred at (-1, 0)
+    mean1 = np.array([-1.0, 0.0])
+    cov1 = np.array([[0.2, 0.0],
+                    [0.0, 0.2]])
+
+    # Class 2: centred at (1, 0)
+    mean2 = np.array([1.0, 0.0])
+    cov2 = np.array([[0.2, 0.0],
+                    [0.0, 0.2]])
+
+    X0 = np.random.multivariate_normal(mean1, cov1, n_each)  # shape (200, 2)
+    X1 = np.random.multivariate_normal(mean2, cov2, n_each)  # shape (200, 2)
+
+    X_all = np.vstack([X0, X1])          # shape (400, 2)
+    Y_all = np.array([0]*n_each + [1]*n_each)  # shape (400,)
+    # reshape to match network
+    X = X_all.T                         # (2, 400)
+    Y = Y_all.reshape(1, -1)             # (1, 400)
+    return X, Y, X0, X1
+#______________________________________________________________________________________
+
+#set off the training + visualisation
+if __name__ == "__main__":
+    #make data- obviously change this to faces
+    X, Y, X0, X1 = sample_data()
+    #set off training the network
+    params, costs, accs = train(
+        X, Y, 
+        nn_architecture,
+        epochs= 10000,
+        learning_rate= 0.01
+    )
+    print("Final cost:", costs[-1])
+    print("Final accuracy:", accs[-1])
+    
+    #set the boundary between the points 
+    x_min, x_max = X[0,:].min() - 0.25, X[0,:].max() + 0.25
+    y_min, y_max= X[1,:].min() - 0.25, X[1,:].max() + 0.25
+
+    xx,yy = np.meshgrid(
+        np.linspace(x_min, x_max, 100),
+        np.linspace(y_min, y_max, 200)
+    )
+    grid_points = np.c_[xx.ravel(), yy.ravel()].T #2,200*200
+    Y_hat_grid, _ = full_forward_prop(grid_points, params, nn_architecture)
+    Z = Y_hat_grid.reshape(xx.shape)
+
+    plt.contourf(xx,yy,Z>0.5, alpha = 0.3)
+    plt.scatter(X0[:, 0], X0[:, 1], c='blue', label='class 1')
+    plt.scatter(X1[:, 0], X1[:, 1], c='red', label='class 2')
+    plt.legend()
+    plt.title("boundary learned by NN")
+    plt.show()
