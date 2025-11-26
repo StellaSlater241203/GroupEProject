@@ -191,6 +191,15 @@ def array_variable_generation(face, overlap):
     noseRotations, noseChecks = decide_rotation(face, noseChecks, noseShapes, noseAllowedRotations, noseIDs, noseCopiesFrom, 1)
     mouthRotations, mouthChecks = decide_rotation(face, mouthChecks, mouthShapes, mouthAllowedRotations, mouthIDs, mouthCopiesFrom, 2)
 
+    #Step 5: decide on the generation order, sort this into a masterlist of the order every single feature is generated individually
+    featureGenOrder, individualGenOrder = generation_order(featureNumbers, eyeGenOrder, noseIDs, mouthIDs)
+    
+    eyePos, nosePos, mouthPos = decide_positions(face, individualGenOrder, eyeChecks, noseChecks, mouthChecks, eyeShapes, noseShapes, mouthShapes, eyeSizes, noseSizes, mouthSizes, eyeRotations, noseRotations, mouthRotations)
+    
+            
+    
+
+    
 
 
 #decide on pregen design would be defined and called here probably xx
@@ -486,16 +495,53 @@ def decide_rotation(face, checks, shapes, allowedRotations, genOrder, copiesFrom
             shapeIndex = shapes[i]
             rotations = allowedRotations[shapeIndex] #get all allowed rotations for this shape
             disallowedRotationsLow = []
-            disallowedRotationsUp = [] #set up lists to be able to pick out the disallowed rotations
-            for i in rotations:
-                lowerBound = i - fluctuation #lowerbound of allowed rotation
-                if lowerBound < 0:
-                    lowerBound = lowerBound + 360
-                upperBound = i + 10 #upperbound of allowed rotation
-                disallowedRotationsLow.append(lowerBound)
-                disallowedRotationsUp.append(upperBound) #add them to these lists
-            index = random.randint(0,(len(rotations)-1))
-            
+            disallowedRotationsUp = []
+            for j in rotations:
+                disallowedRotationsLow.append(None)
+                disallowedRotationsUp.append(None) #for swapping at indexes in a minute
+            counter = 0
+            for j in rotations: #for every allowed rotation for this shape
+                upperBound = j - fluctuation #lowerbound of allowed rotation, but upperbound of disallowed rotation
+                if counter == 0:
+                    if upperBound < 0:
+                        upperBound = upperBound + 360
+                    disallowedRotationsUp[len(disallowedRotationsUp)-1] = upperBound -1 # always moves to the end due to the moving every upperbound down one rule thingy
+                else:
+                    disallowedRotationsUp[counter-1] = upperBound -1 #need to move them all down one to be at the same index as their lowerbound counterpart
+                lowerBound = j + fluctuation #upperbound of allowed rotation, but lowerbound of disallowed rotation
+                disallowedRotationsLow[counter] = lowerBound +1
+                counter += 1
+            index = random.randint(0,(len(rotations)-1)) #couldve been up doesnt matter which theyre the same length
+            if index == (len(disallowedRotationsLow)-1) and rotations[0] != 0: #if its the last disallowed region and the region around 0 and 360 is disallowed:
+                prob = random.uniform(0.0,1.0)
+                if prob < 0.5:
+                    rotation = random.randint(disallowedRotationsLow[index],359) #clockwise side of 0
+                else:
+                    rotation = random.randint(0,disallowedRotationsUp[index]) #anticlockwise side of 0, these are both technically in the same disallowed region btw
+            else:
+                rotation = random.randint(disallowedRotationsLow[index], disallowedRotationsUp[index]) #any angle in the disallowed regions
+            rotationList[i] = rotation
+
+    return(rotationList, checks)
+
+def generation_order(featureNumbers, eyeGen, noseGen, mouthGen): #to randomise the order of which the feautures are generated, to make sure every face that has loads of eyes isnt filled up with only eyes, as nothing has space to generate after them. Thought it might introduce a bit more of a spread
+    featureIDs = [0,1,2]
+    genOrder = random.sample(featureIDs, 3)
+    individualGenOrder = []
+    for i in genOrder:
+        if i == 0:
+            for j in eyeGen:
+                individualGenOrder.append([j,0]) #append the eyes as the order they generate, and add a tag to show they are eyes, to the master order of generation list, should be a 2d array
+        elif i == 1:
+            for j in noseGen:
+                individualGenOrder.append([j,1]) #same with noses
+        else:
+            for j in mouthGen:
+                individualGenOrder.append([j,2]) #same with mouths
+
+    return genOrder, individualGenOrder
+
+def decide_positions(face, genOrder, eyeChecks, noseChecks, mouthChecks, eyeShapes, noseShapes, mouthShapes, eyeSizes, noseSizes, mouthSizes, eyeRotations, noseRotations, mouthRotations):
 
 
 def generate_batch(canvases):
