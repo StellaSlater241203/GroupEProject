@@ -191,8 +191,13 @@ def array_variable_generation(face, overlap):
     noseRotations, noseChecks = decide_rotation(face, noseChecks, noseShapes, noseAllowedRotations, noseIDs, noseCopiesFrom, 1)
     mouthRotations, mouthChecks = decide_rotation(face, mouthChecks, mouthShapes, mouthAllowedRotations, mouthIDs, mouthCopiesFrom, 2)
 
-    #Step 5: decide on the generation order, sort this into a masterlist
+    #Step 5: decide on the generation order, sort this into a masterlist of the order every single feature is generated individually
     featureGenOrder, individualGenOrder = generation_order(featureNumbers, eyeGenOrder, noseIDs, mouthIDs)
+    
+    eyePos, nosePos, mouthPos = decide_positions(face, individualGenOrder, eyeChecks, noseChecks, mouthChecks, eyeShapes, noseShapes, mouthShapes, eyeSizes, noseSizes, mouthSizes, eyeRotations, noseRotations, mouthRotations)
+    
+            
+    
 
     
 
@@ -535,17 +540,20 @@ def generation_order(featureNumbers, eyeGen, noseGen, mouthGen): #to randomise t
     featureIDs = [0,1,2]
     genOrder = random.sample(featureIDs, 3)
     individualGenOrder = []
-    counter = 0
     for i in genOrder:
-        for j in range (featureNumbers[i]):
-            if i == 0:
-                individualGenOrder.append()
+        if i == 0:
+            for j in eyeGen:
+                individualGenOrder.append([j,0]) #append the eyes as the order they generate, and add a tag to show they are eyes, to the master order of generation list, should be a 2d array
+        elif i == 1:
+            for j in noseGen:
+                individualGenOrder.append([j,1]) #same with noses
+        else:
+            for j in mouthGen:
+                individualGenOrder.append([j,2]) #same with mouths
 
+    return genOrder, individualGenOrder
 
-
-def aaaaaaaaaaaa():
-
-            
+def decide_positions(face, genOrder, eyeChecks, noseChecks, mouthChecks, eyeShapes, noseShapes, mouthShapes, eyeSizes, noseSizes, mouthSizes, eyeRotations, noseRotations, mouthRotations):
 
 
 def generate_batch(canvases):
