@@ -48,7 +48,7 @@ def array_variable_generation(face, overlap):
     3. Rotation mirrored (with some randomness), 50% chance
     4. Rotation same (with some randomness), 50% chance
     5. Position (with some randomness), 50% chance (only one of 4 and 5 can be true)
-       Probabilities that an eye will have allowed values of aspects (only checked if its equivalent mirror check is false):
+    Probabilities that an eye will have allowed values of aspects (only checked if its equivalent mirror check is false):
     6. Size, 50% chance
     7. Shape, 50% chance
     8. Rotation, 50% chance
@@ -179,22 +179,18 @@ def array_variable_generation(face, overlap):
     noseRotations = []
     mouthRotations = []
 
-    eyeAllowedRotations = [[0,90,180,270], [None], [0,45,90,135,180,225,270,315], [0,180], [0,180], [0,180], [0,180], [0,180], [0,180], [0,180], [0,180], [0,180], [0,60,120,180,240,300], [0,180], [0,180], [0,180], [0,180], [0], [0,72,144,216,288], [None]]
-    #indexes                    oval       circle            square                 rec      line     lli    curline  dcurline wcurline scircle   vsoval   hsoval           etri             ltri     wtri    ltrap    wtrap  heart        star         spiral
-    noseAllowedRotations = [[90,270], [None], [0,90,180,270], [90,270], [90,270], [90,270], [0,180], [0,180], [0,180], [0,180], [0,180], [0,180], [0,60,120,180,240,300], [0,180], [0,180], [0,180], [0,180], [0,180], [0,72,144,216,288], [None]]
-    #indexes                  oval    circle     square         rec      line      lli     curline  dcurline wcurline scircle   vsoval   hsoval           etri             ltri     wtri    ltrap    wtrap    heart          star         spiral
-    mouthAllowedRotations = [[0,180], [None], [0,90,180,270], [0,180], [0,180], [0,180], [0,180], [0,180], [0,180], [0,180], [0,180], [0,180], [0,60,120,180,240,300], [0,180], [0,180], [0,180], [0,180], [0,180], [0,72,144,216,288], [None]]
-    #indexes                   oval   circle      square        rec      line      lli   curline  dcurline wcurline scircle   vsoval   hsoval           etri             ltri     wtri    ltrap    wtrap    heart          star         spiral
+    eyeAllowedRotations = [[0,90], [0], [0,45], [0], [0], [0], [0,180], [0,180], [0,180], [0,180], [0,180], [0,180], [0,180], [0,180], [0,180], [0,180], [0,180], [0,180], [0], [0]]
+    #indexes                oval  circle square rec  line lli  curline  dcurline wcurline scircle   vsoval   hsoval    etri     ltri     wtri    ltrap    wtrap    heart   star spiral
+    noseAllowedRotations = [[90], [0], [0], [90], [90], [90], [0,180], [0,180], [0,180], [0,180], [0,180], [0,180], [0,180], [0,180], [0,180], [0,180], [0,180], [0,180], [0], [0]]
+    #indexes                oval circ square rec  line   lli  curline  dcurline wcurline scircle   vsoval   hsoval    etri     ltri     wtri    ltrap    wtrap    heart   star spiral
+    mouthAllowedRotations = [[0], [0], [0], [0], [0], [0], [0,180], [0,180], [0,180], [0,180], [0,180], [0,180], [0,180], [0,180], [0,180], [0,180], [0,180], [0,180], [0], [0]]
+    #indexes                oval circ square rec line lli  curline  dcurline wcurline scircle   vsoval   hsoval    etri     ltri     wtri    ltrap    wtrap    heart   star spiral
     #obvs some of these shapes are not allowed for these features but this still allows us to have a disallowed shape with an allowed rotation, still wont be a face, also this makes it easier for pulling into fucntions and stuff cause whatever u send in is now the same length
     
     eyeRotations, eyeChecks = decide_rotation(face, eyeChecks, eyeShapes, eyeAllowedRotations, eyeGenOrder, eyeCopiesFrom, 0)
     noseRotations, noseChecks = decide_rotation(face, noseChecks, noseShapes, noseAllowedRotations, noseIDs, noseCopiesFrom, 1)
     mouthRotations, mouthChecks = decide_rotation(face, mouthChecks, mouthShapes, mouthAllowedRotations, mouthIDs, mouthCopiesFrom, 2)
 
-    #Step 5: decide on the generation order, sort this into a masterlist
-    featureGenOrder, individualGenOrder = generation_order(featureNumbers, eyeGenOrder, noseIDs, mouthIDs)
-
-    
 
 
 #decide on pregen design would be defined and called here probably xx
@@ -218,7 +214,7 @@ def generate_number_of_features(face, totalFeatureNumber, featureNumbers, curren
         featureNumbers.append(int(number)) #append the normal face amount of the feature currently running
         allowedCopies = True
         totalFeatureNumber += defaultGenCopies[currentFeature] #increment the total number of features by this amount
- 
+
     else:  #face = False
         prob = random.uniform(0.0,1.0)
         if prob < DEFAULT_COPIES_PROB:
@@ -427,32 +423,22 @@ def decide_rotation(face, checks, shapes, allowedRotations, genOrder, copiesFrom
         rotationList.append(None) #fills up for indexing purposes blah blah blah been there done that fwnjkhjuwrfjnjlikwfrh
 
     for i in genOrder:
-        if shapes[i] == 1 or shapes[i] == 19: #these are allowed any rotation
-            rotation = random.randint(0,359)
-            rotationList[i] = rotation
-            if currentFeature == 0:
-                checks[i][7] = True #true cuz these shapes cant have disallowed rotations
-            else:
-                checks[i][2] = True #having this first will mean that if these copied the rotation from another feature they probably wont have the same rotation, but for these feautures it doesnt matter anyway cuz they wouldnt look any different if they did
-
-        elif currentFeature == 0 and checks[i][2] == True: #looking at eyes and rotation is mirrored from another eye
+        if currentFeature == 0 and checks[i][2] == True: #looking at eyes and rotation is mirrored from another eye
             copiesFromID = copiesFrom[i]
             rotation = rotationList[copiesFromID]
             mirrorRot = 360 - rotation #360 - og rotation give its mirror the other side of 0
             newMirrorRot = mirrorRot + random.randint((-fluctuation), fluctuation)
             if newMirrorRot >= 360:
                 newMirrorRot = newMirrorRot - 360 #make sure its never larger than 360
-            if newMirrorRot < 0:
-                newMirrorRot = newMirrorRot + 360 #make sure its never smaller than 0 either
             rotationList[i] = newMirrorRot
 
             checks[i][7] = False #by default, if the rotation is allowed then this will be set to true later
             rotationIndex = shapes[i] #now to check if this rotation is allowed for this shape or not
-            for j in allowedRotations[rotationIndex]:
-                clockwise = j + 10
+            for i in allowedRotations[rotationIndex]:
+                clockwise = i + 10
                 if clockwise >= 360: #pretty sure it never will be but anyway
                     clockwise = clockwise - 360
-                anticlockwise = j - 10
+                anticlockwise = i - 10
                 if anticlockwise < 0:
                     anticlockwise = anticlockwise + 360
                 if clockwise > anticlockwise:
@@ -469,22 +455,20 @@ def decide_rotation(face, checks, shapes, allowedRotations, genOrder, copiesFrom
             newRot = rotation + random.randint((-fluctuation), fluctuation)
             if newRot >= 360:
                 newRot = newRot - 360 #make sure its never larger than 360
-            elif newRot < 0:
-                newRot = newRot + 360
             rotationList[i] = newRot
 
             checks[i][7] = False #by default, if the rotation is allowed then this will be set to true later
             rotationIndex = shapes[i] #now to check if this rotation is allowed for this shape or not
-            for j in allowedRotations[rotationIndex]:
-                clockwise = j + 10
+            for i in allowedRotations[rotationIndex]:
+                clockwise = i + 10
                 if clockwise >= 360: #pretty sure it never will be but anyway
                     clockwise = clockwise - 360
-                anticlockwise = j - 10
+                anticlockwise = i - 10
                 if anticlockwise < 0:
                     anticlockwise = anticlockwise + 360
                 if clockwise > anticlockwise:
                     if newRot <= clockwise and newRot >= anticlockwise: #between the 2 extreme allowed angles
-                        checks[i][7] = True
+                        checks[i][7] == True
                 else:
                     if newRot >= anticlockwise or newRot <= clockwise: #between anticlockwise and 360 or between clockwise and 0
                         checks[i][7] = True
@@ -493,7 +477,7 @@ def decide_rotation(face, checks, shapes, allowedRotations, genOrder, copiesFrom
             shapeIndex = shapes[i]
             rotations = allowedRotations[shapeIndex] #get all the allowed rotations for this shape
             rotation = random.sample(rotations, 1) #choose one of the allowed rotations for this shape
-            flucRot = rotation[0] + random.randint((-fluctuation), fluctuation) #add random fluctuation to the allowed rotation
+            flucRot = rotation + random.randint((-fluctuation), fluctuation) #add random fluctuation to the allowed rotation
             if flucRot < 0:
                 flucRot = flucRot + 360
             rotationList[i] = flucRot
@@ -502,49 +486,15 @@ def decide_rotation(face, checks, shapes, allowedRotations, genOrder, copiesFrom
             shapeIndex = shapes[i]
             rotations = allowedRotations[shapeIndex] #get all allowed rotations for this shape
             disallowedRotationsLow = []
-            disallowedRotationsUp = []
-            for j in rotations:
-                disallowedRotationsLow.append(None)
-                disallowedRotationsUp.append(None) #for swapping at indexes in a minute
-            counter = 0
-            for j in rotations: #for every allowed rotation for this shape
-                upperBound = j - fluctuation #lowerbound of allowed rotation, but upperbound of disallowed rotation
-                if counter == 0:
-                    if upperBound < 0:
-                        upperBound = upperBound + 360
-                    disallowedRotationsUp[len(disallowedRotationsUp)-1] = upperBound -1 # always moves to the end due to the moving every upperbound down one rule thingy
-                else:
-                    disallowedRotationsUp[counter-1] = upperBound -1 #need to move them all down one to be at the same index as their lowerbound counterpart
-                lowerBound = j + fluctuation #upperbound of allowed rotation, but lowerbound of disallowed rotation
-                disallowedRotationsLow[counter] = lowerBound +1
-                counter += 1
-            index = random.randint(0,(len(rotations)-1)) #couldve been up doesnt matter which theyre the same length
-            if index == (len(disallowedRotationsLow)-1) and rotations[0] != 0: #if its the last disallowed region and the region around 0 and 360 is disallowed:
-                prob = random.uniform(0.0,1.0)
-                if prob < 0.5:
-                    rotation = random.randint(disallowedRotationsLow[index],359) #clockwise side of 0
-                else:
-                    rotation = random.randint(0,disallowedRotationsUp[index]) #anticlockwise side of 0, these are both technically in the same disallowed region btw
-            else:
-                rotation = random.randint(disallowedRotationsLow[index], disallowedRotationsUp[index]) #any angle in the disallowed regions
-            rotationList[i] = rotation
-
-    return(rotationList, checks)
-
-def generation_order(featureNumbers, eyeGen, noseGen, mouthGen): #to randomise the order of which the feautures are generated, to make sure every face that has loads of eyes isnt filled up with only eyes, as nothing has space to generate after them. Thought it might introduce a bit more of a spread
-    featureIDs = [0,1,2]
-    genOrder = random.sample(featureIDs, 3)
-    individualGenOrder = []
-    counter = 0
-    for i in genOrder:
-        for j in range (featureNumbers[i]):
-            if i == 0:
-                individualGenOrder.append()
-
-
-
-def aaaaaaaaaaaa():
-
+            disallowedRotationsUp = [] #set up lists to be able to pick out the disallowed rotations
+            for i in rotations:
+                lowerBound = i - fluctuation #lowerbound of allowed rotation
+                if lowerBound < 0:
+                    lowerBound = lowerBound + 360
+                upperBound = i + 10 #upperbound of allowed rotation
+                disallowedRotationsLow.append(lowerBound)
+                disallowedRotationsUp.append(upperBound) #add them to these lists
+            index = random.randint(0,(len(rotations)-1))
             
 
 
@@ -566,4 +516,6 @@ for i in range(1): #LITERALLY ONLY FOR TESTING, JUST TO GENERATE 1 BATCH FOR EAS
 
     generate_batch(canvases)
     #root.mainloop()
+
+
 
