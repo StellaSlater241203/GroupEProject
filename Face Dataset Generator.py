@@ -554,7 +554,7 @@ def generation_order(featureNumbers, eyeGen, noseGen, mouthGen): #to randomise t
     return genOrder, individualGenOrder
 
 def decide_positions(face, genOrder, eyeChecks, noseChecks, mouthChecks, eyeShapes, noseShapes, mouthShapes, eyeSizes, noseSizes, mouthSizes, eyeRotations, noseRotations, mouthRotations):
-
+    print("amogus")
 
 def generate_batch(canvases):
     for cv in canvases:
