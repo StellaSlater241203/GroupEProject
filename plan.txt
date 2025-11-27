@@ -1,0 +1,27 @@
+'''count = 0
+for i in masterlist
+    if count = 0
+    generate shape
+    add shape to generated shape list
+    count += 1
+    else
+    generate shape
+    detect collision with all shapes in generated shape list
+    while collision detected
+        regenerate shape
+        detect collision with all shapes in generated shape list
+        add shape to generated shape list'''
+        
+        
+        
+running = True
+'''scscount = 0
+while running = true:
+    while scscount < 20000:
+        call all functions here
+        save the image
+        close window
+        scscount += 1
+        
+        
+    running = False # This breaks the while loop and ends the program'''
