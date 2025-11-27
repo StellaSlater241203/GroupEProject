@@ -1,10 +1,31 @@
 import tkinter
+import pygame
 import math
 import random
 from random import shuffle
 
+pygame.init()
+
 CANVAS_W, CANVAS_H = 256, 256
 FACE_LEFT, FACE_TOP, FACE_RIGHT, FACE_BOTTOM = 52, 32, 204, 224
+CENTER = (128, 128)
+
+# Colours
+Black = (0, 0, 0)
+White = (255, 255, 255)
+
+# Define Canvas
+canvas = pygame.display.set_mode((CANVAS_W, CANVAS_H))
+pygame.display.set_caption("Face Dataset Generator")
+canvas.fill(White)
+
+
+
+#Draw face outline
+def face_outline(surface):
+    rect = pygame.Rect(52, 31, 152, 192) # compute bounding rectangle for the ellipse
+    pygame.draw.ellipse(surface, Black, rect, 1) # draw the ellipse outline
+
 
 #Pregenerated face seeds:
     #decide how tf this is gonna work later, might be easier for this to be a function itself with all the pregen face data in it 
@@ -195,11 +216,7 @@ def array_variable_generation(face, overlap):
     featureGenOrder, individualGenOrder = generation_order(featureNumbers, eyeGenOrder, noseIDs, mouthIDs)
     
     eyePos, nosePos, mouthPos = decide_positions(face, individualGenOrder, eyeChecks, noseChecks, mouthChecks, eyeShapes, noseShapes, mouthShapes, eyeSizes, noseSizes, mouthSizes, eyeRotations, noseRotations, mouthRotations)
-    
-    
-    
 
-    
 
 
 #decide on pregen design would be defined and called here probably xx
@@ -544,7 +561,7 @@ def generation_order(featureNumbers, eyeGen, noseGen, mouthGen): #to randomise t
 def decide_positions(face, genOrder, eyeChecks, noseChecks, mouthChecks, eyeShapes, noseShapes, mouthShapes, eyeSizes, noseSizes, mouthSizes, eyeRotations, noseRotations, mouthRotations):
     print("amogus")
 
-def generate_batch(canvases):
+'''def generate_batch(canvases):
     for cv in canvases:
         cv.delete("all")
         decide_face_type()
@@ -561,7 +578,20 @@ for i in range(1): #LITERALLY ONLY FOR TESTING, JUST TO GENERATE 1 BATCH FOR EAS
             canvases.append(cv)
 
     generate_batch(canvases)
-    #root.mainloop()
+    #root.mainloop()'''
+
+face_outline(canvas)
+
+running = True
+while running:
+    for event in pygame.event.get():
+        if event.type == pygame.QUIT:
+            running = False
+    
+    pygame.display.flip()
+
+
+pygame.quit()
 
 
 

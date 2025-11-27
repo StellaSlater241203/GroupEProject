@@ -18,13 +18,13 @@ WHITE = (255, 255, 255)
 
 
 def draw_oval(surface, color, rect):
-    pygame.draw.ellipse(surface, color, rect)
+    pygame.draw.ellipse(surface, color, rect, 1)
 
 def draw_triangle(surface, color, point1, point2, point3):
-    pygame.draw.polygon(surface, color, [point1, point2, point3])
+    pygame.draw.polygon(surface, color, [point1, point2, point3], 1)
     
 def draw_semioval(surface, color, rect):
-    pygame.draw.ellipse(surface, color, rect)
+    pygame.draw.ellipse(surface, color, rect, 1)
     pygame.draw.rect(surface, BLACK, (rect.x, rect.y, rect.width, rect.height // 2))
     
 def draw_star(surface, color, center, size):
@@ -38,7 +38,7 @@ def draw_star(surface, color, center, size):
         x = center[0] + size * 0.2 * math.cos(angle)
         y = center[1] + size * 0.2 * math.sin(angle)
         points.append((x, y))
-    pygame.draw.polygon(surface, color, points)
+    pygame.draw.polygon(surface, color, points, 1)
 
 
 def get_random_position(size):
@@ -62,7 +62,7 @@ def detect_collision_mask(rect1, rect2):
 screen.fill(WHITE)
 
 # Draw random shapes for testing
-for j in range (3):
+for j in range (50):
     shapes = ["oval", "triangle", "semioval", "star"]
     for i in shapes:
         size = (random.randint(30, 80), random.randint(30, 80))
@@ -90,6 +90,8 @@ while running:
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             running = False
+            
+    print("Running...")
 
 # This code is only reached when 'running' becomes False
 pygame.quit()

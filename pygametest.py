@@ -83,8 +83,5 @@ while running:
         if event.type == pygame.QUIT:
             running = False # This breaks the while loop and closes the window
         
-        # We remove all movement/update logic here as the screen is static
-        # We also remove the clock.tick() and drawing commands
 
-# This code is only reached when 'running' becomes False
 pygame.quit()

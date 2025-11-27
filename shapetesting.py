@@ -2,6 +2,7 @@ import pygame
 import math
 import random
 import time
+import os
 
 pygame.init()
 
@@ -34,7 +35,7 @@ while not exit:
             exit = True
 
 
-    '''for i in range (1, 20):
+    for i in range (1, 500):
         randomcoloura = random.randint(0,255)
         randomcolourb = random.randint(0,255)
         randomcolourc = random.randint(0,255)
@@ -47,9 +48,8 @@ while not exit:
         pygame.draw.ellipse(canvas, glass, pygame.Rect(100,64,128,64))
         #pygame.draw.ellipse(canvas, black, pygame.Rect(52,32,))
         pygame.display.update()
+        cwd = os.getcwd()
         filename = str("amongus" + str(i) + ".png")
-        pygame.image.save(canvas, filename)
-        time.sleep(0.00005)'''
-    
-    
-        
+        pygame.image.save(canvas, os.path.join(cwd, filename))
+        time.sleep(0.00005)
+pygame.quit()
