@@ -191,12 +191,12 @@ def array_variable_generation(face, overlap):
     noseRotations, noseChecks = decide_rotation(face, noseChecks, noseShapes, noseAllowedRotations, noseIDs, noseCopiesFrom, 1)
     mouthRotations, mouthChecks = decide_rotation(face, mouthChecks, mouthShapes, mouthAllowedRotations, mouthIDs, mouthCopiesFrom, 2)
 
-    #Step 5: decide on the generation order, sort this into a masterlist of the order every single feature is generated individually
+    #Step 6: decide on the generation order, sort this into a masterlist of the order every single feature is generated individually
     featureGenOrder, individualGenOrder = generation_order(featureNumbers, eyeGenOrder, noseIDs, mouthIDs)
     
     eyePos, nosePos, mouthPos = decide_positions(face, individualGenOrder, eyeChecks, noseChecks, mouthChecks, eyeShapes, noseShapes, mouthShapes, eyeSizes, noseSizes, mouthSizes, eyeRotations, noseRotations, mouthRotations)
     
-            
+    
     
 
     
@@ -542,6 +542,27 @@ def generation_order(featureNumbers, eyeGen, noseGen, mouthGen): #to randomise t
     return genOrder, individualGenOrder
 
 def decide_positions(face, genOrder, eyeChecks, noseChecks, mouthChecks, eyeShapes, noseShapes, mouthShapes, eyeSizes, noseSizes, mouthSizes, eyeRotations, noseRotations, mouthRotations):
+    print("hello Stella <3")
+    print("These are just to get rid of the error warnings so we know when something is actually wrong")
+    print("I love you")
+
+
+
+
+
+def allowed_regions():
+    return
+
+
+
+
+
+
+
+
+
+
+
 
 
 def generate_batch(canvases):
