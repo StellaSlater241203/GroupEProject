@@ -18,7 +18,7 @@ white = (255, 255, 255)
 # Define Canvas
 canvas = pygame.display.set_mode((CANVAS_W, CANVAS_H))
 pygame.display.set_caption("Face Dataset Generator")
-canvas.fill(White)
+canvas.fill(white)
 
 #Draw face outline
 def face_outline(surface):
