@@ -185,7 +185,7 @@ def array_variable_generation(face, overlap):
     noseAllowedSizes = [0.8,3.0]
     mouthAllowedSizes = [0.8,3.0]#can mess about with these later
     minSize = 0.005
-    maxSize = 5 #limits for disallowed sizes, can be changed for different features later if need be, which is why ive kept this out the function
+    maxSize = 5.0 #limits for disallowed sizes, can be changed for different features later if need be, which is why ive kept this out the function
 
     eyeSizes = []
     noseSizes = []
