@@ -114,8 +114,11 @@ while not exit:
 
 
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
     for i in range (1, 500):
 =======
+=======
+>>>>>>> Stashed changes
 
     '''for i in range (1, 20):
 >>>>>>> Stashed changes
@@ -142,5 +145,9 @@ pygame.quit()
         time.sleep(0.00005)'''
     
 pygame.quit()
+<<<<<<< Updated upstream
+        
+>>>>>>> Stashed changes
+=======
         
 >>>>>>> Stashed changes
