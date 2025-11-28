@@ -5,27 +5,25 @@ import random
 from random import shuffle
 import os
 
-pygame.init()
+pygame.init() #initialise pygame window
 
 CANVAS_W, CANVAS_H = 256, 256
 FACE_LEFT, FACE_TOP, FACE_RIGHT, FACE_BOTTOM = 52, 32, 204, 224
 CENTER = (128, 128)
 
-# Colours
-Black = (0, 0, 0)
-White = (255, 255, 255)
+#Colours
+black = (0, 0, 0) 
+white = (255, 255, 255)
 
 # Define Canvas
 canvas = pygame.display.set_mode((CANVAS_W, CANVAS_H))
 pygame.display.set_caption("Face Dataset Generator")
 canvas.fill(White)
 
-
-
 #Draw face outline
 def face_outline(surface):
-    rect = pygame.Rect(52, 31, 152, 192) # compute bounding rectangle for the ellipse
-    pygame.draw.ellipse(surface, Black, rect, 1) # draw the ellipse outline
+    rect = pygame.Rect(FACE_LEFT, FACE_TOP, FACE_RIGHT, FACE_BOTTOM) # compute bounding rectangle for the ellipse
+    pygame.draw.ellipse(surface, black, rect, 1) # draw the ellipse outline
 
 
 #Pregenerated face seeds:
@@ -216,7 +214,7 @@ def array_variable_generation(face, overlap):
     #Step 6: decide on the generation order, sort this into a masterlist of the order every single feature is generated individually
     featureGenOrder, individualGenOrder = generation_order(featureNumbers, eyeGenOrder, noseIDs, mouthIDs)
     
-    eyePos, nosePos, mouthPos = decide_positions(face, individualGenOrder, eyeChecks, noseChecks, mouthChecks, eyeShapes, noseShapes, mouthShapes, eyeSizes, noseSizes, mouthSizes, eyeRotations, noseRotations, mouthRotations)
+    eyePos, nosePos, mouthPos = decide_positions(face, featureNumbers, individualGenOrder, eyeChecks, eyeCopiesFrom, noseChecks, mouthChecks, eyeShapes, noseShapes, mouthShapes, eyeSizes, noseSizes, mouthSizes, eyeRotations, noseRotations, mouthRotations)
 
 
 
@@ -559,8 +557,48 @@ def generation_order(featureNumbers, eyeGen, noseGen, mouthGen): #to randomise t
 
     return genOrder, individualGenOrder
 
-def decide_positions(face, genOrder, eyeChecks, noseChecks, mouthChecks, eyeShapes, noseShapes, mouthShapes, eyeSizes, noseSizes, mouthSizes, eyeRotations, noseRotations, mouthRotations):
-    print("amogus")
+def decide_positions(face, featureNumbers, genOrder, eyeChecks, eyeCopiesFrom, noseChecks, mouthChecks, eyeShapes, noseShapes, mouthShapes, eyeSizes, noseSizes, mouthSizes, eyeRotations, noseRotations, mouthRotations):
+    fluctuation = 5 #fluctuation mirrored features can be at
+    eyeCentreCoords = []
+    noseCentreCoords = []
+    mouthCentreCoords = []
+
+    for i in range(len(featureNumbers[0])):
+        eyeCentreCoords.append(None)
+    for i in range(len(featureNumbers[1])):
+        noseCentreCoords.append(None)
+    for i in range(len(featureNumbers[2])):
+        mouthCentreCoords.append(None)
+
+    globalIndex = 0
+    for feature in genOrder: #for every feature on the face in the order they generate
+        if feature[1] == 0: #the second item in each list is the index of the feature it is (eg 0 is an eye)
+            index = feature[0] #first item is the ID of this feature
+            if eyeChecks[index][4] == True: #if this eye mirrors the position of another
+                copiesFromID = eyeCopiesFrom[index]
+                position = eyeCentreCoords[copiesFromID] + random.randint((-fluctuation, fluctuation))
+                currentShape = eyeShapes[index]
+                currentSize = eyeSizes[index]
+
+def check_inside_face(position, shape, size):
+    #faceEq = (((x-128)**2)/(76**2)) + (((y-128)**2)/(96**2)) = 1 equation of an ellipse, centre point 128,128, major axis 129 (height of face), minor axis 152 (width of face)
+    largestRadius = [12,9,13,14,6,18,10,]
+
+
+
+                
+
+    
+
+
+
+
+
+
+
+
+
+
 
 '''def generate_batch(canvases):
     for cv in canvases:
