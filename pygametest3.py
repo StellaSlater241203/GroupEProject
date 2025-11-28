@@ -36,7 +36,8 @@ def draw_triangle(surface, colour, point1, point2, point3):
     nose = pygame.draw.polygon(surface, colour, [point1, point2, point3], 1)
 
 def draw_mouth(surface, colour, center, width, height):
-    mouth = (pygame.draw.line(surface, colour, (center[0] - width // 2, center[1]), (center[0] + width // 2, center[1]), 1), pygame.draw.circle(surface, colour, center, width // 2, 1, draw_top_right=False, draw_top_left=False, draw_bottom_right=True, draw_bottom_left=True))
+    mouth = (pygame.draw.line(surface, colour, (center[0] - width // 2, center[1]), (center[0] + width // 2, center[1]), 1), 
+    pygame.draw.circle(surface, colour, center, width // 2, 1, draw_top_right=False, draw_top_left=False, draw_bottom_right=True, draw_bottom_left=True))
 
 
 

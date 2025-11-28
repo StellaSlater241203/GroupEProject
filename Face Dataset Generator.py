@@ -22,8 +22,10 @@ canvas.fill(white)
 
 #Draw face outline
 def face_outline(surface):
-    rect = pygame.Rect(FACE_LEFT, FACE_TOP, FACE_RIGHT, FACE_BOTTOM) # compute bounding rectangle for the ellipse
-    pygame.draw.ellipse(surface, black, rect, 1) # draw the ellipse outline
+    Face_rect = pygame.Rect(52, 32, 152, 192) # compute bounding rectangle for the ellipse
+    Face_Outline_Surface = pygame.Surface(Face_rect.size, pygame.SRCALPHA)
+    pygame.draw.ellipse(Face_Outline_Surface, black, (0, 0, *Face_rect.size), 1) # draw the ellipse outline
+    surface.blit(Face_Outline_Surface, Face_Outline_Surface.get_rect(center = Face_rect.center))
 
 
 #Pregenerated face seeds:
