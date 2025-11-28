@@ -18,8 +18,8 @@ BLACK = (0, 0, 0)
 WHITE = (255, 255, 255)
 
 # Useful Variables
-center = (128, 128)
-featureNumbers = [8, 5, 1] # eyes, nose, mouth
+# center = (128, 128)
+featureNumbers = [2, 1, 1] # eyes, nose, mouth
 features = []
 
 screen.fill(WHITE)
@@ -129,8 +129,8 @@ def draw_face():
             # filled mask surface for collision
             nose_mask_surf = pygame.Surface((w, h), pygame.SRCALPHA)
             pygame.draw.polygon(nose_mask_surf, BLACK, [lp1, lp2, lp3], 0)
-
             draw_triangle(nose_surf, BLACK, lp1, lp2, lp3)#draw nose in local coords
+
             blit_pos = (minx, miny)#top-left position for blitting
 
             for j, (other_surf, other_rect) in enumerate(surfaces_and_rects):#check against already existing features
@@ -143,8 +143,10 @@ def draw_face():
                     nose_cx = random.randint(96, 160)
                     nose_cy = random.randint(80, 176)
                     break
-
+        
         rect = nose_surf.get_rect(topleft=blit_pos)#same as above
+        pygame.transform.rotate(nose_surf, 30)
+
         surfaces_and_rects.append((nose_surf, rect))
         feature_positions.append(blit_pos)
         mask_surfaces.append(nose_mask_surf)
@@ -171,6 +173,8 @@ def draw_face():
 
             mouth_surf = pygame.Surface((mouth_w, mouth_h), pygame.SRCALPHA) #mouth bounding box (who woulda seen it)
             draw_mouth(mouth_surf, BLACK, (mouth_w // 2, mouth_h // 2), mouth_w, mouth_h)
+            rotated_mouth_surf = pygame.transform.rotate(mouth_surf, 30)
+            mouth_surf.blit(rotated_mouth_surf, (50, 50))
             blit_pos = (mouth_cx - mouth_w // 2, mouth_cy - mouth_h // 2)
 
             for j, (other_surf, other_rect) in enumerate(surfaces_and_rects):#omg never guess what this does
@@ -191,22 +195,44 @@ def draw_face():
 
     return surfaces_and_rects #return list of (surface, rect) tuples for blitting
 
+def draw_ellipse_angle(surface, color, rect, angle, width=2):
+    target_rect = pygame.Rect(rect)
+    shape_surf = pygame.Surface(target_rect.size, pygame.SRCALPHA)
+    pygame.draw.ellipse(shape_surf, color, (0, 0, *target_rect.size), width)
+    rotated_surf = pygame.transform.rotate(shape_surf, angle)
+    surface.blit(rotated_surf, rotated_surf.get_rect(center = target_rect.center))
+
+def draw_polygon_angle(surface, colour, rect, angle, width = 1):
+    target_rect = pygame.Rect(rect)
+    shape_surf1 = pygame.Surface(target_rect.size, pygame.SRCALPHA)
+    pygame.draw.polygon(shape_surf1, colour, ((5, 5), (15, 20), (10, 20), (5, 20)), width)
+    rotated_surf = pygame.transform.rotate(shape_surf1, angle)
+    surface.blit(rotated_surf, rotated_surf.get_rect(center = target_rect.center))
+
+
+
+
+draw_ellipse_angle(screen, BLACK, (20, 20, 20, 30), random.randint(5, 50))
+draw_polygon_angle(screen, BLACK, (200, 220, 30, 30), random.randint(0, 360))
 
 
 # Draw face outline
 faces_list = []
-for i in range(200):
+for i in range(25):
     print("face: ", i)
     screen.fill(WHITE)
     face_outline(screen)
-    features_list = draw_face()
-    faces_list.append(features_list)
+    #features_list = draw_face()
+    #faces_list.append(features_list)
+    draw_ellipse_angle(screen, BLACK, (20, 20, 20, 30), random.randint(0, 360))
+    draw_polygon_angle(screen, BLACK, (200, 220, 30, 30), random.randint(0, 360))
+
     
     # Display this face immediately
-    for surface, rect in features_list:
-        screen.blit(surface, rect)
+    #for surface, rect in features_list:
+        #screen.blit(surface, rect)
     pygame.display.flip()
-    time.sleep(1.5)
+    time.sleep(0.5)
 
 
 

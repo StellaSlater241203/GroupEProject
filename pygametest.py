@@ -1,6 +1,8 @@
 import pygame
 import random
 import os
+import math
+from math import pi
 
 # --- Collision Detection Functions (Kept for initial placement logic) ---
 
@@ -22,8 +24,8 @@ def detect_oval_collision_mask(rect1, rect2):
 pygame.init()
 
 # Screen dimensions
-SCREEN_WIDTH = 256
-SCREEN_HEIGHT = 256
+SCREEN_WIDTH = 1024
+SCREEN_HEIGHT = 800
 screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
 pygame.display.set_caption("Pygame Static Ovals")
 
@@ -61,8 +63,10 @@ screen.fill(BLACK) # Clear screen once
 pygame.draw.ellipse(screen, GREEN, oval1_rect)
 pygame.draw.ellipse(screen, RED, oval2_rect)
 
-# Update the display once so the user sees the final drawing
-pygame.display.flip()
+rect = get_new_random_rect()
+pygame.draw.arc(screen, RED, (25, 40, 200, 200), (pi/4), pi, 1500), print("hi")
+pygame.display.flip(), print("hi 2")
+
 
 
 filename = "static_ovals.png"
@@ -82,6 +86,5 @@ while running:
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             running = False # This breaks the while loop and closes the window
-        
 
 pygame.quit()

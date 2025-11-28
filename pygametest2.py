@@ -25,7 +25,7 @@ def draw_triangle(surface, color, point1, point2, point3):
     
 def draw_semioval(surface, color, rect):
     pygame.draw.ellipse(surface, color, rect, 1)
-    pygame.draw.rect(surface, BLACK, (rect.x, rect.y, rect.width, rect.height // 2))
+    pygame.draw.rect(surface, BLACK, (rect.x, rect.y, rect.width, rect.height // 2), 1)
     
 def draw_star(surface, color, center, size):
     points = []

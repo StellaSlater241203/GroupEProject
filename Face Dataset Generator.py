@@ -3,6 +3,7 @@ import pygame
 import math
 import random
 from random import shuffle
+import os
 
 pygame.init()
 
@@ -581,6 +582,18 @@ for i in range(1): #LITERALLY ONLY FOR TESTING, JUST TO GENERATE 1 BATCH FOR EAS
     #root.mainloop()'''
 
 face_outline(canvas)
+
+
+
+
+
+
+def save_all_da_shit():
+    cwd = os.getcwd()
+    for i in range (5): #change to 20000 for final test
+        filename = str(str(i) + ".png")
+        pygame.image.save(canvas, os.path.join(cwd, filename))
+
 
 running = True
 while running:
