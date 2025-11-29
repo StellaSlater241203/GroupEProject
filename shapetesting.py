@@ -66,37 +66,28 @@ for i in range(len(coordList)):
         coords = [coordx + coordList[i][0], coordy + coordList[i][1], coordList[i][2], coordList[i][3]]
     if i == 0 or i == 1:
         pygame.draw.ellipse(canvas, black, coords, 1)
-        pygame.draw.rect(canvas, red, pygame.Rect(coordx,coordy,1,1))
     elif i == 2 or i == 3:
         pygame.draw.rect(canvas, black, coords, 1)
-        pygame.draw.rect(canvas, red, pygame.Rect(coordx,coordy,1,1))
     elif i == 4 or i == 5:
         pygame.draw.line(canvas, black, coords[0], coords[1], 1)
-        pygame.draw.rect(canvas, red, pygame.Rect(coordx,coordy,1,1))
     elif i == 6 or i == 7 or i == 8:
         pygame.draw.arc(canvas, black, coords, 0, pi, 1)
-        pygame.draw.rect(canvas, red, pygame.Rect(coordx,coordy,1,1))
     elif i == 9 or i == 10 or i == 11:
         pygame.draw.arc(canvas, black, coords[0], 0, pi, 1)
         pygame.draw.line(canvas, black, coords[1], coords[2], 1)
-        pygame.draw.rect(canvas, red, pygame.Rect(coordx,coordy,1,1))
     elif i == 12 or i == 13 or i == 14 or i == 15 or i == 16 or i == 18:
         pygame.draw.polygon(canvas, black, coords, 1)
-        pygame.draw.rect(canvas, red, pygame.Rect(coordx,coordy,1,1))
     elif i == 17:
         pygame.draw.arc(canvas, black, coords[0], (pi/4), (5*pi/4), 1)
         pygame.draw.arc(canvas, black, coords[1], (7*pi/4), (3*pi/4), 1)
         pygame.draw.line(canvas, black, coords[2], coords[3], 1)
         pygame.draw.line(canvas, black, coords[4], coords[5], 1)
-        pygame.draw.rect(canvas, red, pygame.Rect(coordx,coordy,1,1))
     elif i == 19:
         pygame.draw.arc(canvas, black, coords[0], 0, pi, 1)
         pygame.draw.arc(canvas, black, coords[1], pi, 2*pi, 1)
         pygame.draw.arc(canvas, black, coords[2], 0, pi, 1)
         pygame.draw.arc(canvas, black, coords[3], pi, 2*pi, 1)
         pygame.draw.arc(canvas, black, coords[4], 0, pi, 1)
-        pygame.draw.rect(canvas, red, pygame.Rect(coordx,coordy,1,1))
-
 
     coordx += 64
     if coordx > 224:

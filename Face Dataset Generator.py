@@ -608,10 +608,22 @@ def positions(face, featureGenOrder, featureNumbers, genOrder, eyeChecks, eyeCop
         if feature[1] == 0: #the second item in each list is the index of the feature it is (eg 0 is an eye)
             index = feature[0] #first item is the ID of this feature
             if eyeChecks[index][4] == True: #if this eye mirrors the position of another
-                copiesFromID = eyeCopiesFrom[index]
-                positiony = eyeCentreCoords[copiesFromID][1] + random.randint((-fluctuation), fluctuation)
-                alreadyY = True
-                
+                copiesFromID = eyeCopiesFrom[index] #get index of eye it mirrors
+                positionY = eyeCentreCoords[copiesFromID][1] + random.randint((-fluctuation), fluctuation) #get y coord of eye it mirrors
+                eyeCentreCoords[feature[0]], leftEyeRegionSide, rightEyeRegionSide, eyeRegionBottom = decide_positions(face, featureGenOrder, eyeCentreCoords, noseCentreCoords, mouthCentreCoords, eyeShapes, eyeSides[feature[0]], noseShapes, mouthShapes, eyeSizes, noseSizes, mouthSizes, 0, eyeChecks[feature[0]][8], genOrder, True, positionY)
+            else:
+                eyeCentreCoords[feature[0]], leftEyeRegionSide, rightEyeRegionSide, eyeRegionBottom = decide_positions(face, featureGenOrder, eyeCentreCoords, noseCentreCoords, mouthCentreCoords, eyeShapes, eyeSides[feature[0]], noseShapes, mouthShapes, eyeSizes, noseSizes, mouthSizes, 0, eyeChecks[feature[0]][8], genOrder, False)
+            #this where making shape to be drawn info and collision calling goes i think (?)
+        elif feature[1] == 1:
+            noseCentreCoords[feature[0]], noseRegionLeft, noseRegionRight, noseRegionTop, noseRegionBottom = decide_positions(face, featureGenOrder, eyeCentreCoords, noseCentreCoords, mouthCentreCoords, eyeShapes, "", noseShapes, mouthShapes, eyeSizes, noseSizes, mouthSizes, 1, noseChecks[feature[0]][3], genOrder, False)
+            #this is where making shape to be drawn info and collision calling goes also i think, unless its at the end
+        else: 
+            mouthCentreCoords[feature[0]], mouthRegionTop = decide_positions(face, featureGenOrder, eyeCentreCoords, noseCentreCoords, mouthCentreCoords, eyeShapes, "", noseShapes, mouthShapes, eyeSizes, noseSizes, mouthSizes, 2, mouthChecks[feature[0]][3], genOrder, False)
+
+
+
+# ----------- Allowed Region checks to return True or False if a coordinate is inside them -------------
+
 def check_inside_face(x,y):
     rsq = (((x-128)**2)/(76**2)) + (((y-128)**2)/(96**2))
     if rsq < 1:
@@ -631,7 +643,7 @@ def check_inside_left_eye_region(x,y,xex=116,yex=122):
         return True
     else:
         return False 
-    
+
 def check_inside_right_eye_region(x,y,xex=140,yex=122):
     xok = False
     yok = False
@@ -657,10 +669,10 @@ def check_inside_nose_region(x,y,xleft=100,xright=156,ytop=96,ybot=146):
     else:
         return False
 
-def check_inside_mouth_region(x,y,ytop=132): #identical to the nose version, leaving it separate incase any changes need to be made to it xx
+def check_inside_mouth_region(x,y,ytop=132): 
     xok = False
     yok = False
-    if 100<x<156:
+    if 84<x<172:
         xok = True
     if ytop<y<198:
         yok = True
@@ -668,6 +680,8 @@ def check_inside_mouth_region(x,y,ytop=132): #identical to the nose version, lea
         return True
     else:
         return False
+
+# ---------------- END ------------------
 
 # --------------- Allowed Regions as tangible shapes on their own surfaces --------------- 
 
@@ -693,7 +707,7 @@ def right_eye_boundary_box(xLeft = 140, xRight = 188, yTop = 74, yBottom = 122, 
     rEyeSurface = pygame.Surface(rEyeBoundaryRect.size, pygame.SRCALPHA) #create a surface with the size of the rectangle
     
     pygame.draw.line(rEyeSurface, black, (1, height-1), (width-1, height-1), 1)  # horizontal line
-    pygame.draw.line(rEyeSurface, black, (0, height-1), (1, 1), 1) # vertical line
+    pygame.draw.line(rEyeSurface, black, (1, height-1), (1, 1), 1) # vertical line
     pygame.draw.arc(rEyeSurface, black, (-48, 0, 2*(width - 2), 2*(height - 2)), math.pi, (math.pi/2), 1) # arc
     
     surface.blit(rEyeSurface, rEyeBoundaryRect)
@@ -728,13 +742,11 @@ def mouth_boundary_box(xLeft = 100, xRight = 156, yTop = 132, yBottom = 198, sur
 def collision_detection():
     print("help me")
 
-
-
-def decide_positions(face, featureGenOrder, eyeCentreCoords, noseCentreCoords, mouthCentreCoords, eyeShapes, side, noseShapes, 
-    mouthShapes, eyeSizes, noseSizes, mouthSizes, currentFeature, check, individualGenOrder, alreadyY, positionY):
+def decide_positions(face, featureGenOrder, eyeCentreCoords, noseCentreCoords, mouthCentreCoords, eyeShapes, side, noseShapes, mouthShapes, eyeSizes, noseSizes, mouthSizes, currentFeature, check, individualGenOrder, alreadyY, positionY=0):
     largestRadius = [12,9,13,14,6,18,10,9,13,10,9,13,11,10,15,14,14,14,10,12]
     surfs_and_rects = []
 
+    #initial allowed region parameters so theyre never not defined cuz that was happening more often than id like to admit
     leftEyeSide = 116
     rightEyeSide = 140
     eyeBottom = 122
@@ -831,19 +843,22 @@ def decide_positions(face, featureGenOrder, eyeCentreCoords, noseCentreCoords, m
             lradius = largestRadius[shapeindex]*size # calc radius of bounding box for furthest away point from centre of the mouth multiplied by size mult
             highestPoint = math.ceil(mouthCentreCoords[0][1] - lradius) #topmost point of mouth (y=0 at top left not bottom left)
 
-            if noseBottom > highestPoint: #if mouth encroaches in nose allowed region
+            if noseBottom > highestPoint: #if mouth encroaches in nose allowed region from the top
                 noseBottom = highestPoint
 
         if check == True:
-            x = random.randint(noseLeft,noseRight)
-            y = random.randint(noseTop,noseBottom)
-        
+            if noseLeft <= noseRight: #should never not be the case as collision is involved afterwards as well
+                x = random.randint(noseLeft,noseRight)
+                y = random.randint(noseTop,noseBottom)
+            else:
+                x = random.randint(noseRight,noseLeft) #just incase it is, in which case we're not working with a face anyway so not too fussed where the nose goes
+                y = random.randint(noseTop,noseBottom)
         else:
             x = random.randint(52,204)
             y = random.randint(32,224)
             while check_inside_face(x,y) == False or check_inside_nose_region(x,y,noseLeft,noseRight,noseTop,noseBottom) == True:
                 x = random.randint(52,204)
-                y = random.randint(32,224)
+                y = random.randint(32,224) #anywhere in face as long as its not in the nose allowed region
 
     else: #mouth passed in
         if face == True and noseCentreCoords != []:
@@ -855,18 +870,23 @@ def decide_positions(face, featureGenOrder, eyeCentreCoords, noseCentreCoords, m
             if mouthTop < lowestPoint: #if nose encroaches into mouth allowed region
                 mouthTop = lowestPoint
 
-        if check == True:
+        if check == True: #if in allowed region
             x = random.randint(84,172)
             y = random.randint(mouthTop,198)
         
-        else:
+        else: #if not in allowed region
             x = random.randint(52,204)
             y = random.randint(32,224)
             while check_inside_face(x,y) == False or check_inside_mouth_region(x,y,mouthTop) == True:
                 x = random.randint(52,204)
-                y = random.randint(32,224)
+                y = random.randint(32,224) #anywhere in face as long as its not in the mouth allowed region
 
-    return([x,y])
+    if currentFeature == 0:
+        return([x,y], leftEyeSide, rightEyeSide, eyeBottom)
+    elif currentFeature == 1:
+        return([x,y], noseLeft, noseRight, noseTop, noseBottom)
+    else:
+        return([x,y], mouthTop)
 
 
 
