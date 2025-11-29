@@ -670,433 +670,138 @@ def check_inside_mouth_region(x,y,ytop=132): #identical to the nose version, lea
 def decide_positions(face, featureGenOrder, eyeCentreCoords, noseCentreCoords, mouthCentreCoords, eyeShapes, side, noseShapes, mouthShapes, eyeSizes, noseSizes, mouthSizes, currentFeature, check, individualGenOrder, alreadyY, positionY):
     largestRadius = [12,9,13,14,6,18,10,9,13,10,9,13,11,10,15,14,14,14,10,12]
 
-    if currentFeature == featureGenOrder[0]: #if first feature type to have been generated
+    leftEyeSide = 116
+    rightEyeSide = 140
+    eyeBottom = 122
+    noseTop = 96
+    noseLeft = 100
+    noseRight = 156
+    noseBottom = 146
+    mouthTop = 132
 
-        if currentFeature == 0: #if dealing with eyes
-            if check == True and side != None: #if eye in allowed position and it has a side to generate in
-                if side == "left": #generate pos in left side
-                    x = random.randint(68,116)
+    if currentFeature == 0: #eye passed in
+        if face == True and noseCentreCoords!= []: #the only conditions that will change the shape of the eye allowed regions
+            shapeindex = noseShapes[0] # get nose shape
+            size = noseSizes[0] # and its size
+            lradius = largestRadius[shapeindex]*size # calc radius of bounding box for furthest away point from centre of the nose multiplied by size mult
+            leftestPoint = math.ceil(noseCentreCoords[0][0] - lradius) #leftmost x coord of nose
+            rightestPoint = math.ceil(noseCentreCoords[0][0] + lradius) #rightmost x coord of nose
+            highestPoint = math.ceil(noseCentreCoords[0][1] - lradius) #topmost point of nose (y=0 at top left not bottom left)
+            
+            if leftEyeSide > leftestPoint: #if the nose encroaches sideways into the left eye allowed region
+                leftEyeSide = leftestPoint
+            
+            if rightEyeSide < rightestPoint: #if the nose encroaches sideways into the right eye allowed region
+                rightEyeSide = rightestPoint
+
+            if eyeBottom > highestPoint: #if the nose encroaches upwards into the eye allowed regions
+                eyeBottom = highestPoint
+            
+        if check == True: #if eye is in an allowed position
+            if alreadyY == True: 
+                y = positionY #if y pos was copied from the function before this
+            else:
+                y = random.randint(74,eyeBottom) #y coord the same for both allowed regions, set it first
+
+            if side == "left": #if eye in left allowed position
+                x = random.randint(68,leftEyeSide)
+                while check_inside_left_eye_region(x,y,leftEyeSide,eyeBottom) == False:
+                    x = random.randint(68,leftEyeSide)
                     if alreadyY == True:
-                        y = positionY #if an eye copied from another the y coord was passed in so that doesnt change
+                        y = positionY
                     else:
-                        y = random.randint(74,122)
-                    while check_inside_left_eye_region(x,y) == False:
-                        x = random.randint(68,116)
-                        if alreadyY == True:
-                            y = positionY
-                        else:
-                            y = random.randint(74,122)
-                elif side == "right": #generate pos in right side
-                    x = random.randint(140,188)
+                        y = random.randint(74,eyeBottom)
+            
+            if side == "right": #if eye in right allowed position
+                x = random.randint(rightEyeSide,188)
+                regionCheck = check_inside_right_eye_region(x,y,rightEyeSide,eyeBottom)
+                while regionCheck == False:
+                    x = random.randint(rightEyeSide,188)
                     if alreadyY == True:
-                        y = positionY #if an eye copied from another the y coord was passed in so that doesnt change
+                        y = positionY
                     else:
-                        y = random.randint(74,122)
-                    while check_inside_right_eye_region(x,y) == False:
-                        x = random.randint(140,188)
-                        if alreadyY == True:
-                            y = positionY
-                        else:
-                            y = random.randint(74,122)
-            else: #if its in a disallowed position
-                if alreadyY == True: #if copied blah blah blah blah
+                        y = random.randint(74,eyeBottom)
+                    regionCheck = check_inside_right_eye_region(x,y,rightEyeSide,eyeBottom)
+
+        else: #not in an allowed position
+            if alreadyY == True:
+                y = positionY
+            else:
+                y = random.randint(32,224)
+            x = random.randint(52,204)
+            while check_inside_face(x,y) == False or check_inside_left_eye_region(x,y,leftEyeSide,eyeBottom) == True or check_inside_right_eye_region(x,y,rightEyeSide,eyeBottom) == True:
+                x = random.randint(52,204)
+                if alreadyY == True:
                     y = positionY
                 else:
                     y = random.randint(32,224)
-                x = random.randint(52,204)
-                while check_inside_face(x,y) == False or check_inside_left_eye_region(x,y) == True or check_inside_right_eye_region(x,y) == True:
-                    x = random.randint(52,204)
-                    if alreadyY == True:
-                        y = positionY
-                    else:
-                        y = random.randint(32,224)
+
+    elif currentFeature == 1: #nose passed in
+        if face == True and eyeCentreCoords != []:
+            lowestPoints = []
+            for i in range(0,len(eyeCentreCoords)): # for each eye
+                ycoord = eyeCentreCoords[i][1] # get y coord of eye
+                xcoord = eyeCentreCoords[i][0] # get x coord of eye
+                shapeindex = eyeShapes[i] # get its shape
+                size = eyeSizes[i] # and its size
+                lradius = largestRadius[shapeindex]*size # calc radius of bounding box for furthest away point from centre of the eye multiplied by size mult
+                lowestPoint = math.ceil(ycoord + lradius) # calc the lowest possible point of the eye
+                lowestPoints.append(lowestPoint)
+                if xcoord < 128:
+                    leftestPoint = math.ceil(xcoord + lradius) #rightmost point of left eye (left side of nose region though)
+                elif xcoord >= 128:
+                    rightestPoint = math.ceil(xcoord - lradius) #leftmost point of right eye (right side of nose region though)
+            
+            for point in lowestPoints: #there are 2 lowest points, need to find the lowest one
+                if noseTop < point: #if lowest point of the eyes encroaches into the nose allowed region
+                    noseTop = point
+            if noseLeft < leftestPoint: #if the rightmost point of the left eye encroaches into the nose region
+                noseLeft = leftestPoint
+            if noseRight > rightestPoint: #if the leftmost point of the right eye encroaches into the nose region
+                noseRight = rightestPoint
+
+        if face == True and mouthCentreCoords != []:
+            shapeindex = mouthShapes[0] # get mouth shape
+            size = mouthSizes[0] # and its size
+            lradius = largestRadius[shapeindex]*size # calc radius of bounding box for furthest away point from centre of the mouth multiplied by size mult
+            highestPoint = math.ceil(mouthCentreCoords[0][1] - lradius) #topmost point of mouth (y=0 at top left not bottom left)
+
+            if noseBottom > highestPoint: #if mouth encroaches in nose allowed region
+                noseBottom = highestPoint
+
+        if check == True:
+            x = random.randint(noseLeft,noseRight)
+            y = random.randint(noseTop,noseBottom)
         
-        elif currentFeature == 1: #nose
-            if check == True: #in allowed pos
-                x = random.randint(100,156)
-                y = random.randint(96,146)
-            elif check == False: #disallowed pos
+        else:
+            x = random.randint(52,204)
+            y = random.randint(32,224)
+            while check_inside_face(x,y) == False or check_inside_nose_region(x,y,noseLeft,noseRight,noseTop,noseBottom) == True:
                 x = random.randint(52,204)
                 y = random.randint(32,224)
-                while check_inside_face(x,y) == False or check_inside_nose_region(x,y) == True:
-                    x = random.randint(52,204)
-                    y = random.randint(32,224)
-                
-        else: #mouth
-            if check == True: #in allowed pos
-                x = random.randint(100,156)
-                y = random.randint(132,198)
-            elif check == False: #disallowed pos
+
+    else: #mouth passed in
+        if face == True and noseCentreCoords != []:
+            shapeindex = noseShapes[0] # get nose shape
+            size = noseSizes[0] # and its size
+            lradius = largestRadius[shapeindex]*size # calc radius of bounding box for furthest away point from centre of the nose multiplied by size mult
+            lowestPoint = noseCentreCoords[0][1] + lradius #bottommost point of nose (y=0 at top left not bottom left)
+
+            if mouthTop < lowestPoint: #if nose encroaches into mouth allowed region
+                mouthTop = lowestPoint
+
+        if check == True:
+            x = random.randint(84,172)
+            y = random.randint(mouthTop,198)
+        
+        else:
+            x = random.randint(52,204)
+            y = random.randint(32,224)
+            while check_inside_face(x,y) == False or check_inside_mouth_region(x,y,mouthTop) == True:
                 x = random.randint(52,204)
                 y = random.randint(32,224)
-                while check_inside_face(x,y) == False or check_inside_mouth_region(x,y) == True:
-                    x = random.randint(52,204)
-                    y = random.randint(32,224)
 
-    elif currentFeature == featureGenOrder[1] and featureGenOrder[0] == 0: # if current type of feature is the second type to be generated and the first to be generated were the eyes
-        if face == True:
-            if currentFeature == 1: #nose, eyes done first
-                yList = [] # list of y coordinates of already generated eyes
-                for i in range(0,len(eyeCentreCoords)): # for each eye
-                    ycoord = eyeCentreCoords[i][1] # get y coord of eye
-                    shapeindex = eyeShapes[i] # get its shape
-                    size = eyeSizes[i] # and its size
-                    lradius = largestRadius[shapeindex]*size # calc radius of bounding box for furthest away point from centre of the eye multiplied by size mult
-                    ylowest = lradius+ycoord # calc the lowest possible point of the eye
-                    yList.append(ylowest) #add the lowest point to a list
-                
-                currentlowest = 96 # top of the nose allowed region
-                for i in yList: # for each eye's lowest coordinates 
-                    if i > currentlowest: # if the eye's lowest point is lower than either the lowest eye's lowest point so far or the top of the boundary box if there have yet to be any eyes that pass it
-                        currentlowest = i # set a new lowest point
-                if currentlowest != 96: # if an eye has been generated with its lowest point below the top of the default allowed region
-                    currentlowest = currentlowest + 5 # make the heighest point of the nose allowed region box 5 pixels lower than the lowest point of the lowest eye
-                
-                xLeftList = []
-                xRightList = []
-                for i in range(0,len(eyeCentreCoords)):
-                    xcoord = eyeCentreCoords[i][0]
-                    shapeindex = eyeShapes[i]
-                    size = eyeSizes[i]
-                    lradius = largestRadius[shapeindex]*size
-                    if xcoord < 128:
-                        xRightmost = xcoord + lradius
-                        xLeftList.append(xRightmost)
-                    else:
-                        xLeftmost = xcoord - lradius
-                        xRightList.append(xLeftmost)
-                    
-                currentFurthestR = 100
-                currentFurthestL = 156
-                for i in xLeftList:
-                    if i > currentFurthestR:
-                        currentFurthestR = i
-                for i in xRightList:
-                    if i < currentFurthestL:
-                        currentFurthestL = i
-
-                if currentFurthestR != 100:
-                    currentFurthestR + 5
-                if currentFurthestL != 156:
-                    currentFurthestL - 5
-
-                if check == True:
-                    x = random.randint(currentFurthestR,currentFurthestL)
-                    y = random.randint(currentlowest,146)
-                
-                if check == False:
-                    x = random.randint(52,204)
-                    y = random.randint(32,224)
-                    while check_inside_face(x,y) == False or check_inside_nose_region(x,y,currentFurthestR,currentFurthestL,currentlowest) == True:
-                        x = random.randint(52,204)
-                        y = random.randint(32,224)
-            
-            else: #mouth, eyes done first
-                if check == True:
-                    x = random.randint(100, 156)
-                    y = random.randint(132, 198)
-                else:
-                    x = random.randint(52, 204)
-                    y = random.randint(32, 224)
-                    while check_inside_face(x,y) == False or check_inside_mouth_region(x,y) == True:
-                        x = random.randint(52, 204)
-                        y = random.randint(32, 224)
-        else: #face is not true, dont bother adjusting regions
-            if currentFeature == 1: #nose, eyes done first
-                if check == True:
-                    x = random.randint(100, 156)
-                    y = random.randint(96, 146)
-                else:
-                        x = random.randint(52, 204)
-                        y = random.randint(32, 224)
-                        while check_inside_face(x, y) == False or check_inside_nose_region == True:
-                            x = random.randint(52, 204)
-                            y = random.randint(32, 224)
-            else:
-                if check == True:
-                    x = random.randint(100, 156)
-                    y = random.randint(132, 198)
-                else:
-                    x = random.randint(52, 204)
-                    y = random.randint(32, 224)
-                    while check_inside_face(x,y) == False or check_inside_mouth_region(x,y) == True:
-                        x = random.randint(52, 204)
-                        y = random.randint(32, 224)
-
-    elif currentFeature == featureGenOrder[1] and featureGenOrder[0] == 1: #eye or mouth if nose first 
-        if face == True:
-            if currentFeature == 0: # eye
-                shapeindex = noseShapes[i] # get nose shape
-                size = noseSizes[i] # and its size
-                lradius = largestRadius[shapeindex]*size # calc radius of bounding box for furthest away point from centre of the nose multiplied by size mult
-                leftestPoint = noseCentreCoords[0] - lradius
-                rightestPoint = noseCentreCoords[0] + lradius
-                highestPoint = noseCentreCoords[1] + lradius
-                if check == True and side != None:
-                    if side == "left": #if left eye
-                        if highestPoint > 122: #if existing nose's highest point is above the bottom of the eye boundary box
-                            if leftestPoint < 116: # if nose extends into left eye boundary
-                                if alreadyY == True:
-                                    y = positionY
-                                    x = random.randint(68, (leftestPoint - 5))
-                                    while check_inside_left_eye_region(x, y, leftestPoint, highestPoint) == False:
-                                        x = random.randint(68, (leftestPoint - 5))
-                                else:
-                                    y = random.randint(74, (highestPoint - 5))
-                                    x = random.randint(68, (leftestPoint - 5))
-                                    while check_inside_left_eye_region(x, y, leftestPoint, highestPoint) == False:
-                                        x = random.randint(68, (leftestPoint - 5))
-                                        y = random.randint(74, (highestPoint - 5))
-                            else:
-                                if alreadyY == True:
-                                    y = positionY
-                                    x = random.randint(68, 116)
-                                    while check_inside_left_eye_region(x, y, yex = highestPoint) == False:
-                                        x = random.randint(68, 116)
-                                else:
-                                    y = random.randint(74, (highestPoint - 5))
-                                    x = random.randint(68, 116)
-                                    while check_inside_left_eye_region(x, y, yex = highestPoint) == False:
-                                        x = random.randint(68, 116)
-                                        y = random.randint(74, (highestPoint - 5))
-                        else:
-                            if leftestPoint < 116: # if nose extends into left eye boundary
-                                if alreadyY == True:
-                                    y = positionY
-                                    x = random.randint(68, (leftestPoint - 5))
-                                    while check_inside_left_eye_region(x, y, leftestPoint) == False:
-                                        x = random.randint(68, (leftestPoint - 5))
-                                else:
-                                    y = random.randint(74 ,122)
-                                    x = random.randint(68, (leftestPoint - 5))
-                                    while check_inside_left_eye_region(x, y, leftestPoint) == False:
-                                        x = random.randint(68, (leftestPoint - 5))
-                                        y = random.randint(74, 122)
-                            else:
-                                if alreadyY == True:
-                                    y = positionY
-                                    x = random.randint(68, 116)
-                                    while check_inside_left_eye_region(x, y) == False:
-                                        x = random.randint(68, 116)
-                                else:
-                                    y = random.randint(74, 122)
-                                    x = random.randint(68, 116)
-                                    while check_inside_left_eye_region(x, y) == False:
-                                        x = random.randint(68, 116)
-                                        y = random.randint(74, 122)
-                    elif side == "right":
-                        if highestPoint > 122: #if existing nose's highest point is above the bottom of the eye boundary box
-                            if rightestPoint > 140: # if nose extends into right eye boundary
-                                if alreadyY == True:
-                                    y = positionY
-                                    x = random.randint(68, (rightestPoint + 5))
-                                    while check_inside_right_eye_region(x, y, rightestPoint, highestPoint) == False:
-                                        x = random.randint(68, (rightestPoint + 5))
-                                else:
-                                    y = random.randint(74, (highestPoint - 5))
-                                    x = random.randint(68, (rightestPoint + 5))
-                                    while check_inside_right_eye_region(x, y, rightestPoint, highestPoint) == False:
-                                        x = random.randint(68, (rightestPoint + 5))
-                                        y = random.randint(74, (highestPoint - 5))
-                            else:
-                                if alreadyY == True:
-                                    y = positionY
-                                    x = random.randint(68, 116)
-                                    while check_inside_right_eye_region(x, y, yex = highestPoint) == False:
-                                        x = random.randint(68, 116)
-                                else:
-                                    y = random.randint(74, (highestPoint - 5))
-                                    x = random.randint(68, 116)
-                                    while check_inside_right_eye_region(x, y, yex = highestPoint) == False:
-                                        x = random.randint(68, 116)
-                                        y = random.randint(74, (highestPoint - 5))
-                        else:
-                            if rightestPoint > 140: # if nose extends into right eye boundary
-                                if alreadyY == True:
-                                    y = positionY
-                                    x = random.randint(68, (rightestPoint + 5))
-                                    while check_inside_right_eye_region(x, y, rightestPoint) == False:
-                                        x = random.randint(68, (rightestPoint + 5))
-                                else:
-                                    y = random.randint(74 ,122)
-                                    x = random.randint(68, (rightestPoint + 5))
-                                    while check_inside_right_eye_region(x, y, rightestPoint) == False:
-                                        x = random.randint(68, (rightestPoint + 5))
-                                        y = random.randint(74, 122)
-                            else:
-                                if alreadyY == True:
-                                    y = positionY
-                                    x = random.randint(68, 116)
-                                    while check_inside_right_eye_region(x, y) == False:
-                                        x = random.randint(68, 116)
-                                else:
-                                    y = random.randint(74, 122)
-                                    x = random.randint(68, 116)
-                                    while check_inside_right_eye_region(x, y) == False:
-                                        x = random.randint(68, 116)
-                                        y = random.randint(74, 122)
-                elif check == False:
-                    if alreadyY:
-                        y = positionY
-                        x = random.randint(52, 204)
-                        while check_inside_face(x, y) == False or check_inside_left_eye_region == True or check_inside_right_eye_region == True:
-                            x = random.randint(52, 204)
-                    else:
-                        y = random.randint(32, 224)
-                        x = random.randint(52, 204)
-                        while check_inside_face(x, y) == False or check_inside_left_eye_region == True or check_inside_right_eye_region == True:
-                            x = random.randint(52, 204)
-                            y = random.randint(32, 224)
-            else: #mouth
-                if check == True:
-                    yList = [] # list of y coordinates of already generated noses
-                    for i in range(0,len(noseCentreCoords)): # for each nose
-                        ycoord = noseCentreCoords[i][1] # get y coord of centre of nose
-                        shapeindex = noseShapes[i] # get its shape
-                        size = noseSizes[i] # and its size
-                        lradius = largestRadius[shapeindex]*size # calc radius of bounding box for furthest away point from centre of the nose multiplied by size mult
-                        ylowest = lradius+ycoord # calc the lowest possible point of the nose
-                        yList.append(ylowest) #add the lowest point to a list
-                    
-                    currentlowest = 132 # top of the mouth allowed region
-                    for i in yList: # for each nose lowest coordinates 
-                        if i > currentlowest: # if the nose's lowest point is lower than either the lowest nose's lowest point so far or the top of the boundary box if there have yet to be any nose that pass it
-                            currentlowest = i # set a new lowest point
-                    if currentlowest != 132: # if an nose has been generated with its lowest point below the top of the default allowed region
-                        currentlowest = currentlowest + 5 # make the heighest point of the mouth allowed region box 5 pixels lower than the lowest point of the lowest nose
-                    
-                    x = random.randint(100, 156)
-                    y = random.randint(currentlowest, 198)
-                else:
-                    x = random.randint(52 ,204)
-                    y = random.ranndint(32, 224)
-                    while check_inside_face(x, y) == False or check_inside_mouth_region(x, y) == True:
-                        x = random.randint(52 ,204)
-                        y = random.ranndint(32, 224)
-
-    elif currentFeature == featureGenOrder[1] and featureGenOrder[0] == 2: #2nd feature, mouth done first
-        if face == True:
-            if currentFeature == 0:
-                if check == True and side != None: #if eye in allowed position and it has a side to generate in
-                    if side == "left": #generate pos in left side
-                        x = random.randint(68,116)
-                        if alreadyY == True:
-                            y = positionY #if an eye copied from another the y coord was passed in so that doesnt change
-                        else:
-                            y = random.randint(74,122)
-                        while check_inside_left_eye_region(x,y) == False:
-                            x = random.randint(68,116)
-                            if alreadyY == True:
-                                y = positionY
-                            else:
-                                y = random.randint(74,122)
-                    elif side == "right": #generate pos in right side
-                        x = random.randint(140,188)
-                        if alreadyY == True:
-                            y = positionY #if an eye copied from another the y coord was passed in so that doesnt change
-                        else:
-                            y = random.randint(74,122)
-                        while check_inside_right_eye_region(x,y) == False:
-                            x = random.randint(140,188)
-                            if alreadyY == True:
-                                y = positionY
-                            else:
-                                y = random.randint(74,122)
-                else: #if its in a disallowed position
-                    if alreadyY == True: #if copied blah blah blah blah
-                        y = positionY
-                    else:
-                        y = random.randint(32,224)
-                    x = random.randint(52,204)
-                    while check_inside_face(x,y) == False or check_inside_left_eye_region(x,y) == True or check_inside_right_eye_region(x,y) == True:
-                        x = random.randint(52,204)
-                        if alreadyY == True:
-                            y = positionY
-                        else:
-                            y = random.randint(32,224)
-
-            if currentFeature == 1: #nose, mouth already done
-                yList = [] # list of y coordinates of already generated mouth
-                for i in range(0,len(mouthCentreCoords)): # for the mouth
-                    ycoord = mouthCentreCoords[i][1] # get y coord of mouth
-                    shapeindex = mouthShapes[i] # get its shape
-                    size = mouthSizes[i] # and its size
-                    lradius = largestRadius[shapeindex]*size # calc radius of bounding box for furthest away point from centre of the  multiplied by size mult
-                    yhighest = lradius-ycoord # calc the highest possible point of the mouth
-                    yList.append(yhighest) #add the highest point to a list
-                
-                currentHighest = 146 # bottom of the nose allowed region
-                for i in yList: # for mouth highest coord
-                    if i < currentHighest: # if the mouths highest point encroaches into nose allowed region, shorten nose allowed region
-                        currentHighest = i
-                if currentHighest != 146: 
-                    currentHighest = currentHighest - 5 
-
-                if check == True:
-                    x = random.randint(100,156)
-                    y = random.randint(96,currentHighest)
-                
-                if check == False:
-                    x = random.randint(52,204)
-                    y = random.randint(32,224)
-                    while check_inside_face(x,y) == False or check_inside_nose_region(x,y,ybot=currentHighest):
-                        x = random.randint(52,204)
-                        y = random.randint(32,224)
-
-        else: #face false
-            if currentFeature == 0:#eyes mouth already generated
-                if check == True and side != None: #if eye in allowed position and it has a side to generate in
-                    if side == "left": #generate pos in left side
-                        x = random.randint(68,116)
-                        if alreadyY == True:
-                            y = positionY #if an eye copied from another the y coord was passed in so that doesnt change
-                        else:
-                            y = random.randint(74,122)
-                        while check_inside_left_eye_region(x,y) == False:
-                            x = random.randint(68,116)
-                            if alreadyY == True:
-                                y = positionY
-                            else:
-                                y = random.randint(74,122)
-                    elif side == "right": #generate pos in right side
-                        x = random.randint(140,188)
-                        if alreadyY == True:
-                            y = positionY #if an eye copied from another the y coord was passed in so that doesnt change
-                        else:
-                            y = random.randint(74,122)
-                        while check_inside_right_eye_region(x,y) == False:
-                            x = random.randint(140,188)
-                            if alreadyY == True:
-                                y = positionY
-                            else:
-                                y = random.randint(74,122)
-                else: #if its in a disallowed position
-                    if alreadyY == True: #if copied blah blah blah blah
-                        y = positionY
-                    else:
-                        y = random.randint(32,224)
-                    x = random.randint(52,204)
-                    while check_inside_face(x,y) == False or check_inside_left_eye_region(x,y) == True or check_inside_right_eye_region(x,y) == True:
-                        x = random.randint(52,204)
-                        if alreadyY == True:
-                            y = positionY
-                        else:
-                            y = random.randint(32,224)
-                            
-            elif currentFeature == 1: #nose mouth already done
-                if check == True: #in allowed pos
-                    x = random.randint(100,156)
-                    y = random.randint(96,146)
-                elif check == False: #disallowed pos
-                    x = random.randint(52,204)
-                    y = random.randint(32,224)
-                    while check_inside_face(x,y) == False or check_inside_nose_region(x,y) == True:
-                        x = random.randint(52,204)
-                        y = random.randint(32,224)
-            
-    else:
-        if face == True:
-            print("3rd feature, either eyes and nose done, eyes and mouth done or nose and mouth done")
+    return([x,y])
 
 
 
