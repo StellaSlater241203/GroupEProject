@@ -215,7 +215,7 @@ def array_variable_generation(face, overlap):
 
     eyeSides, eyeChecks = left_or_right_eye(face, eyeGenOrder, eyeCopiesFrom, eyeChecks)
     
-    eyePos, nosePos, mouthPos = positions(face, featureGenOrder, featureNumbers, individualGenOrder, eyeChecks, eyeCopiesFrom, eyeSides, noseChecks, mouthChecks, eyeShapes, noseShapes, mouthShapes, eyeSizes, noseSizes, mouthSizes, eyeRotations, noseRotations, mouthRotations)
+    eyePos, nosePos, mouthPos = draw_face(face, featureGenOrder, featureNumbers, individualGenOrder, eyeChecks, eyeCopiesFrom, eyeSides, noseChecks, mouthChecks, eyeShapes, noseShapes, mouthShapes, eyeSizes, noseSizes, mouthSizes, eyeRotations, noseRotations, mouthRotations)
 
 
 
@@ -586,8 +586,9 @@ def left_or_right_eye(face, genOrder, copiesFrom, checks):
             leftOrRight[i] = None
 
     return (leftOrRight, checks)
-        
-def positions(face, featureGenOrder, featureNumbers, genOrder, eyeChecks, eyeCopiesFrom, 
+
+
+def draw_face(face, featureGenOrder, featureNumbers, genOrder, eyeChecks, eyeCopiesFrom, 
             eyeSides, noseChecks, mouthChecks, eyeShapes, noseShapes, mouthShapes, eyeSizes, 
             noseSizes, mouthSizes, eyeRotations, noseRotations, mouthRotations):
     fluctuation = 5 #fluctuation mirrored features can be at
@@ -595,6 +596,7 @@ def positions(face, featureGenOrder, featureNumbers, genOrder, eyeChecks, eyeCop
     noseCentreCoords = []
     mouthCentreCoords = []
     wasGenerated = []
+    boundary_surfs_and_rects = []
 
     for i in range(featureNumbers[0]):
         eyeCentreCoords.append(None)
@@ -725,7 +727,7 @@ def nose_boundary_box(xLeft = 100, xRight = 156, yTop = 96, yBottom = 146, surfa
     surface.blit(noseSurface, noseBoundaryRect)
     return [noseSurface, noseBoundaryRect]
 
-def mouth_boundary_box(xLeft = 100, xRight = 156, yTop = 132, yBottom = 198, surface = canvas):
+def mouth_boundary_box(xLeft = 84, xRight = 172, yTop = 132, yBottom = 198, surface = canvas):
     width = xRight - xLeft
     height = yBottom - yTop
     
@@ -739,12 +741,21 @@ def mouth_boundary_box(xLeft = 100, xRight = 156, yTop = 132, yBottom = 198, sur
 
 # --------------- END --------------- 
 
-def collision_detection():
-    print("help me")
+def collision_detection(shape1, shape2):
+    surface1, pos1 = shape1
+    surface2, pos2 = shape2
+    mask1 = pygame.mask.from_surface(surface1)
+    mask2 = pygame.mask.from_surface(surface2)
+    offset_x = pos2[0] - pos1[0]
+    offset_y = pos2[1] - pos1[1]
+    if mask1.overlap(mask2, (offset_x, offset_y)):
+        return True
+    return False
 
-def decide_positions(face, featureGenOrder, eyeCentreCoords, noseCentreCoords, mouthCentreCoords, eyeShapes, side, noseShapes, mouthShapes, eyeSizes, noseSizes, mouthSizes, currentFeature, check, individualGenOrder, alreadyY, positionY=0):
+def decide_positions(face, featureGenOrder, eyeCentreCoords, noseCentreCoords, mouthCentreCoords, eyeShapes, side, noseShapes, 
+    mouthShapes, eyeSizes, noseSizes, mouthSizes, currentFeature, check, individualGenOrder, alreadyY, positionY):
     largestRadius = [12,9,13,14,6,18,10,9,13,10,9,13,11,10,15,14,14,14,10,12]
-    surfs_and_rects = []
+    boundary_surfs_and_rects = []
 
     #initial allowed region parameters so theyre never not defined cuz that was happening more often than id like to admit
     leftEyeSide = 116
@@ -788,6 +799,7 @@ def decide_positions(face, featureGenOrder, eyeCentreCoords, noseCentreCoords, m
                         y = positionY
                     else:
                         y = random.randint(74,eyeBottom)
+                boundary_surfs_and_rects.append(left_eye_boundary_box(xRight = leftEyeSide, yBottom = eyeBottom))
             
             if side == "right": #if eye in right allowed position
                 x = random.randint(rightEyeSide,188)
@@ -796,9 +808,11 @@ def decide_positions(face, featureGenOrder, eyeCentreCoords, noseCentreCoords, m
                     x = random.randint(rightEyeSide,188)
                     if alreadyY == True:
                         y = positionY
+                        print("gay")
                     else:
                         y = random.randint(74,eyeBottom)
                     regionCheck = check_inside_right_eye_region(x,y,rightEyeSide,eyeBottom)
+                boundary_surfs_and_rects.append(right_eye_boundary_box(xleft = rightEyeSide, yBottom = eyeBottom))
 
         else: #not in an allowed position
             if alreadyY == True:
@@ -850,6 +864,7 @@ def decide_positions(face, featureGenOrder, eyeCentreCoords, noseCentreCoords, m
             if noseLeft <= noseRight: #should never not be the case as collision is involved afterwards as well
                 x = random.randint(noseLeft,noseRight)
                 y = random.randint(noseTop,noseBottom)
+                boundary_surfs_and_rects.append(nose_boundary_box(xLeft = noseLeft, xRight = noseRight, yTop = noseTop, yBottom = noseBottom))
             else:
                 x = random.randint(noseRight,noseLeft) #just incase it is, in which case we're not working with a face anyway so not too fussed where the nose goes
                 y = random.randint(noseTop,noseBottom)
@@ -873,6 +888,7 @@ def decide_positions(face, featureGenOrder, eyeCentreCoords, noseCentreCoords, m
         if check == True: #if in allowed region
             x = random.randint(84,172)
             y = random.randint(mouthTop,198)
+            boundary_surfs_and_rects.append(mouth_boundary_box(yTop = mouthTop))
         
         else: #if not in allowed region
             x = random.randint(52,204)
@@ -896,6 +912,15 @@ def face_outline(surface):
     faceSurface = pygame.Surface(faceRect.size, pygame.SRCALPHA)
     pygame.draw.ellipse(faceSurface, black, (0, 0, *faceRect.size), 1) # draw the ellipse outline
     surface.blit(faceSurface, faceSurface.get_rect(center = faceRect.center))
+
+
+
+
+
+
+
+
+
 
 '''def generate_batch(canvases):
     for cv in canvases:

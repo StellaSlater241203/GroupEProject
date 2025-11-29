@@ -18,7 +18,9 @@ faceSurface = pygame.Surface(faceRect.size, pygame.SRCALPHA)
 pygame.draw.ellipse(faceSurface, grey, (0, 0, *faceRect.size), 1)
 canvas.blit(faceSurface, faceSurface.get_rect(center = faceRect.center))
 
-def detect_collision_mask(surface1, pos1, surface2, pos2): #from stack overflow
+def detect_collision_mask(shape1, shape2): #from stack overflow
+    surface1, pos1 = shape1
+    surface2, pos2 = shape2
     mask1 = pygame.mask.from_surface(surface1)
     mask2 = pygame.mask.from_surface(surface2)
     offset_x = pos2[0] - pos1[0]
@@ -47,38 +49,61 @@ def check_inside_face(x,y):
     else:
         return False
 
-def left_eye_boundary_box(xLeft = 68, xRight = 116, yTop = 74, yBottom = 122, ):
-    pygame.draw
+def left_eye_boundary_box(xLeft = 68, xRight = 116, yTop = 74, yBottom = 122, surface = canvas):
+    width = xRight - xLeft + 2 #find size of surface based on passed in size of allowed region
+    height = yBottom - yTop + 2
 
+    lEyeBoundaryRect = pygame.Rect(xLeft - 1, yTop - 1, width, height) #create a rectangle big enough to encompass boundary box
+    lEyeBoundarySurface = pygame.Surface(lEyeBoundaryRect.size, pygame.SRCALPHA) #create a surface with the size of the rectangle
+
+    pygame.draw.line(lEyeBoundarySurface, grey, (1, height-1), (width-1, height-1), 1)  # horizontal line
+    pygame.draw.line(lEyeBoundarySurface, grey, (width-1, height-1), (width-1, 1), 1) # vertical line
+    pygame.draw.arc(lEyeBoundarySurface, grey, (1, 1, 2*(width - 2), 2*(height - 2)), math.pi/2, math.pi, 1) # arc
+    pygame.display.flip()
+    
+    surface.blit(lEyeBoundarySurface, lEyeBoundaryRect)
+    lEyeBoundaryShape = [lEyeBoundarySurface, lEyeBoundaryRect]
+    return lEyeBoundaryShape
+
+
+
+
+boundary = left_eye_boundary_box()
 
 counter = 0
 gendFeats = []
-for i in range(0,20):
-    eyex = random.randint(52,204)
-    eyey = random.randint(32,224)
-    while check_inside_face(eyex, eyey) == False:
-        eyex = random.randint(52,204)
-        eyey = random.randint(32,224)
-    while check_inside_left_eye_region(eyex, eyey) == False:
-        eyex = random.randint(52,204)
-        eyey = random.randint(32,224)
-    
-    eyeRect = pygame.Rect(eyex-12, eyey-6, 24, 12)
+
+for i in range(20):
+    eyex = random.randint(52, 204)
+    eyey = random.randint(32, 224)
+    while not check_inside_face(eyex, eyey) or not check_inside_left_eye_region(eyex, eyey):
+        eyex = random.randint(52, 204)
+        eyey = random.randint(32, 224)
+
+    eyeRect = pygame.Rect(eyex - 12, eyey - 6, 24, 12)
     eyeSurface = pygame.Surface(eyeRect.size, pygame.SRCALPHA)
     pygame.draw.ellipse(eyeSurface, grey, (0, 0, *eyeRect.size), 1)
-    while detect_collision_mask(faceSurface, faceTopLeft, eyeSurface, [eyex-12, eyey-6]) == True:
+    eye = [eyeSurface, eyeRect]
+
+    while detect_collision_mask(eye, boundary):
         counter += 1
         print(counter)
-        eyex = random.randint(52,204)
-        eyey = random.randint(32,224)
-        while ((((eyex)-128)**2)/(76**2)) + ((((eyey)-128)**2)/(96**2)) >= 1:
-            eyex = random.randint(52,204)
-            eyey = random.randint(32,224)
-        eyeRect = pygame.Rect(eyex-12, eyey-6, 24, 12)
+
+        eyex = random.randint(52, 204)
+        eyey = random.randint(32, 224)
+
+        for index, eye in enumerate(gendFeats):
+            while not check_inside_face(eyex, eyey) or not check_inside_left_eye_region(eyex, eyey) or detect_collision_mask(eye, gendFeats[i]):
+                eyex = random.randint(52, 204)
+                eyey = random.randint(32, 224)
+
+        eyeRect = pygame.Rect(eyex - 12, eyey - 6, 24, 12)
         eyeSurface = pygame.Surface(eyeRect.size, pygame.SRCALPHA)
         pygame.draw.ellipse(eyeSurface, grey, (0, 0, *eyeRect.size), 1)
-    gendFeats.append([eyeSurface])
-    canvas.blit(eyeSurface, eyeSurface.get_rect(center = eyeRect.center))
+        eye = [eyeSurface, eyeRect]
+
+    gendFeats.append(eye)
+    canvas.blit(eyeSurface, eyeSurface.get_rect(center=eyeRect.center))
     pygame.display.flip()
     time.sleep(0.5)
 
