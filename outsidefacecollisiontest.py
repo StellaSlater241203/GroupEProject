@@ -27,17 +27,56 @@ def detect_collision_mask(surface1, pos1, surface2, pos2): #from stack overflow
         return True
     return False
 
+def check_inside_left_eye_region(x,y,xex=116,yex=122):
+    xok = False
+    yok = False
+    if 68 < x < xex:
+        xok = True
+    if 74 < y < yex:
+        yok = True
+    rsq = ((x-116)**2)+((y-122)**2)
+    if xok == True and yok == True and rsq < 2304:
+        return True
+    else:
+        return False 
+
+def check_inside_face(x,y):
+    rsq = (((x-128)**2)/(76**2)) + (((y-128)**2)/(96**2))
+    if rsq < 1:
+        return True
+    else:
+        return False
+
+def left_eye_boundary_box(xLeft = 68, xRight = 116, yTop = 74, yBottom = 122, ):
+    pygame.draw
+
+
+counter = 0
 for i in range(0,500):
     eyex = random.randint(52,204)
     eyey = random.randint(32,224)
-    while ((((eyex)-128)**2)/(76**2)) + ((((eyey)-128)**2)/(96**2)) >= 1:
+    while check_inside_face(eyex, eyey) == False:
         eyex = random.randint(52,204)
         eyey = random.randint(32,224)
+    while check_inside_left_eye_region(eyex, eyey) == False:
+        eyex = random.randint(52,204)
+        eyey = random.randint(32,224)
+    
     eyeRect = pygame.Rect(eyex-12, eyey-6, 24, 12)
     eyeSurface = pygame.Surface(eyeRect.size, pygame.SRCALPHA)
     pygame.draw.ellipse(eyeSurface, grey, (0, 0, *eyeRect.size), 1)
+    while detect_collision_mask(faceSurface, faceTopLeft, eyeSurface, [eyex-12, eyey-6]) == True:
+        counter += 1
+        print(counter)
+        eyex = random.randint(52,204)
+        eyey = random.randint(32,224)
+        while ((((eyex)-128)**2)/(76**2)) + ((((eyey)-128)**2)/(96**2)) >= 1:
+            eyex = random.randint(52,204)
+            eyey = random.randint(32,224)
+        eyeRect = pygame.Rect(eyex-12, eyey-6, 24, 12)
+        eyeSurface = pygame.Surface(eyeRect.size, pygame.SRCALPHA)
+        pygame.draw.ellipse(eyeSurface, grey, (0, 0, *eyeRect.size), 1)
     canvas.blit(eyeSurface, eyeSurface.get_rect(center = eyeRect.center))
-    print(detect_collision_mask(faceSurface, faceTopLeft, eyeSurface, [eyex-12, eyey-6]))
     pygame.display.flip()
     time.sleep(0.05)
 

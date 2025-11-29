@@ -587,7 +587,9 @@ def left_or_right_eye(face, genOrder, copiesFrom, checks):
 
     return (leftOrRight, checks)
         
-def positions(face, featureGenOrder, featureNumbers, genOrder, eyeChecks, eyeCopiesFrom, eyeSides, noseChecks, mouthChecks, eyeShapes, noseShapes, mouthShapes, eyeSizes, noseSizes, mouthSizes, eyeRotations, noseRotations, mouthRotations):
+def positions(face, featureGenOrder, featureNumbers, genOrder, eyeChecks, eyeCopiesFrom, 
+            eyeSides, noseChecks, mouthChecks, eyeShapes, noseShapes, mouthShapes, eyeSizes, 
+            noseSizes, mouthSizes, eyeRotations, noseRotations, mouthRotations):
     fluctuation = 5 #fluctuation mirrored features can be at
     eyeCentreCoords = []
     noseCentreCoords = []
@@ -667,8 +669,66 @@ def check_inside_mouth_region(x,y,ytop=132): #identical to the nose version, lea
     else:
         return False
 
-def decide_positions(face, featureGenOrder, eyeCentreCoords, noseCentreCoords, mouthCentreCoords, eyeShapes, side, noseShapes, mouthShapes, eyeSizes, noseSizes, mouthSizes, currentFeature, check, individualGenOrder, alreadyY, positionY):
+# --------------- Allowed Regions as tangible shapes on their own surfaces --------------- 
+
+def left_eye_boundary_box(xLeft = 68, xRight = 116, yTop = 74, yBottom = 122, surface = canvas):
+    width = xRight - xLeft + 2#find size of surface based on passed in size of allowed region
+    height = yBottom - yTop + 2
+
+    lEyeBoundaryRect = pygame.Rect(xLeft - 1, yTop - 1, width, height) #create a rectangle big enough to encompass boundary box
+    lEyeSurface = pygame.Surface(lEyeBoundaryRect.size, pygame.SRCALPHA) #create a surface with the size of the rectangle
+
+    pygame.draw.line(lEyeSurface, black, (1, height-1), (width-1, height-1), 1)  # horizontal line
+    pygame.draw.line(lEyeSurface, black, (width-1, height-1), (width-1, 1), 1) # vertical line
+    pygame.draw.arc(lEyeSurface, black, (1, 1, 2*(width - 2), 2*(height - 2)), math.pi/2, math.pi, 1) # arc
+
+    surface.blit(lEyeSurface, lEyeBoundaryRect)
+    return [lEyeSurface, lEyeBoundaryRect]
+
+def right_eye_boundary_box(xLeft = 140, xRight = 188, yTop = 74, yBottom = 122, surface = canvas):
+    width = xRight - xLeft + 2 #find size of surface based on passed in size of allowed region
+    height = yBottom - yTop + 2
+    
+    rEyeBoundaryRect = pygame.Rect(xLeft - 1, yTop - 1, width, height) #create a rectangle big enough to encompass boundary box
+    rEyeSurface = pygame.Surface(rEyeBoundaryRect.size, pygame.SRCALPHA) #create a surface with the size of the rectangle
+    
+    pygame.draw.line(rEyeSurface, black, (1, height-1), (width-1, height-1), 1)  # horizontal line
+    pygame.draw.line(rEyeSurface, black, (0, height-1), (1, 1), 1) # vertical line
+    pygame.draw.arc(rEyeSurface, black, (-48, 0, 2*(width - 2), 2*(height - 2)), math.pi, (math.pi/2), 1) # arc
+    
+    surface.blit(rEyeSurface, rEyeBoundaryRect)
+    return [rEyeSurface, rEyeBoundaryRect]
+
+def nose_boundary_box(xLeft = 100, xRight = 156, yTop = 96, yBottom = 146, surface = canvas):
+    width = xRight - xLeft
+    height = yBottom - yTop
+    
+    noseBoundaryRect = pygame.Rect(xLeft, yTop, width, height)
+    noseSurface = pygame.Surface(noseBoundaryRect.size, pygame.SRCALPHA)
+    
+    pygame.draw.rect(noseSurface, black, (0, 0, width, height), 1)
+    
+    surface.blit(noseSurface, noseBoundaryRect)
+    return [noseSurface, noseBoundaryRect]
+
+def mouth_boundary_box(xLeft = 100, xRight = 156, yTop = 132, yBottom = 198, surface = canvas):
+    width = xRight - xLeft
+    height = yBottom - yTop
+    
+    mouthBoundaryRect = pygame.Rect(xLeft, yTop, width, height)
+    mouthSurface = pygame.Surface(mouthBoundaryRect.size, pygame.SRCALPHA)
+    
+    pygame.draw.rect(mouthSurface, black, (0, 0, width, height), 1)
+    
+    surface.blit(mouthSurface, mouthBoundaryRect)
+    return [mouthSurface, mouthBoundaryRect]
+
+# --------------- END --------------- 
+
+def decide_positions(face, featureGenOrder, eyeCentreCoords, noseCentreCoords, mouthCentreCoords, eyeShapes, side, noseShapes, 
+    mouthShapes, eyeSizes, noseSizes, mouthSizes, currentFeature, check, individualGenOrder, alreadyY, positionY):
     largestRadius = [12,9,13,14,6,18,10,9,13,10,9,13,11,10,15,14,14,14,10,12]
+    surfs_and_rects = []
 
     if currentFeature == featureGenOrder[0]: #if first feature type to have been generated
 
@@ -1097,6 +1157,9 @@ def decide_positions(face, featureGenOrder, eyeCentreCoords, noseCentreCoords, m
     else:
         if face == True:
             print("3rd feature, either eyes and nose done, eyes and mouth done or nose and mouth done")
+    
+    
+    return x, y, 
 
 
 
