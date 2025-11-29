@@ -62,7 +62,8 @@ def nose_boundary_box(xLeft = 100, xRight = 156, yTop = 96, yBottom = 146, surfa
     pygame.draw.rect(noseSurface, GREEN, (0, 0, width, height), 1)
     
     surface.blit(noseSurface, noseBoundaryRect)
-    return [noseSurface, noseBoundaryRect]
+    noseBoundary = [noseSurface, noseBoundaryRect]
+    return noseBoundary
 
 def mouth_boundary_box(xLeft = 100, xRight = 156, yTop = 132, yBottom = 198, surface = canvas):
     width = xRight - xLeft
@@ -74,8 +75,20 @@ def mouth_boundary_box(xLeft = 100, xRight = 156, yTop = 132, yBottom = 198, sur
     pygame.draw.rect(mouthSurface, RED, (0, 0, width, height), 1)
     
     surface.blit(mouthSurface, mouthBoundaryRect)
-    return [mouthSurface, mouthBoundaryRect]
+    mouthBoundary = [mouthSurface, mouthBoundaryRect]
+    return mouthBoundary
 
+
+def detect_collision_mask(shape1, shape2): # edited from stack overflow
+    surface1, pos1 = shape1
+    surface2, pos2 = shape2
+    mask1 = pygame.mask.from_surface(surface1)
+    mask2 = pygame.mask.from_surface(surface2)
+    offset_x = pos2[0] - pos1[0]
+    offset_y = pos2[1] - pos1[1]
+    if mask1.overlap(mask2, (offset_x, offset_y)):
+        return True
+    return False
 
 face_outline(canvas)
 left_eye_boundary_box()
