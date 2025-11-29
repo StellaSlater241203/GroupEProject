@@ -52,7 +52,8 @@ def left_eye_boundary_box(xLeft = 68, xRight = 116, yTop = 74, yBottom = 122, ):
 
 
 counter = 0
-for i in range(0,500):
+gendFeats = []
+for i in range(0,20):
     eyex = random.randint(52,204)
     eyey = random.randint(32,224)
     while check_inside_face(eyex, eyey) == False:
@@ -76,9 +77,10 @@ for i in range(0,500):
         eyeRect = pygame.Rect(eyex-12, eyey-6, 24, 12)
         eyeSurface = pygame.Surface(eyeRect.size, pygame.SRCALPHA)
         pygame.draw.ellipse(eyeSurface, grey, (0, 0, *eyeRect.size), 1)
+    gendFeats.append([eyeSurface])
     canvas.blit(eyeSurface, eyeSurface.get_rect(center = eyeRect.center))
     pygame.display.flip()
-    time.sleep(0.05)
+    time.sleep(0.5)
 
 
 

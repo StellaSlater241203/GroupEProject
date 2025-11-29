@@ -725,6 +725,11 @@ def mouth_boundary_box(xLeft = 100, xRight = 156, yTop = 132, yBottom = 198, sur
 
 # --------------- END --------------- 
 
+def collision_detection():
+    print("help me")
+
+
+
 def decide_positions(face, featureGenOrder, eyeCentreCoords, noseCentreCoords, mouthCentreCoords, eyeShapes, side, noseShapes, 
     mouthShapes, eyeSizes, noseSizes, mouthSizes, currentFeature, check, individualGenOrder, alreadyY, positionY):
     largestRadius = [12,9,13,14,6,18,10,9,13,10,9,13,11,10,15,14,14,14,10,12]
