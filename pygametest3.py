@@ -227,6 +227,7 @@ for i in range(25):
     #faces_list.append(features_list)
     draw_ellipse_angle(screen, BLACK, (20, 20, 20, 30), random.randint(0, 360))
     draw_polygon_angle(screen, BLACK, (200, 220, 30, 30), random.randint(0, 360))
+    print(random.randint(1, 3000))
 
     
     # Display this face immediately
@@ -234,7 +235,6 @@ for i in range(25):
         #screen.blit(surface, rect)
     pygame.display.flip()
     time.sleep(0.5)
-
 
 
 running = True
