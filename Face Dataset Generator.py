@@ -590,7 +590,7 @@ def left_or_right_eye(face, genOrder, copiesFrom, checks):
 def draw_face(face, featureGenOrder, featureNumbers, genOrder, eyeChecks, eyeCopiesFrom, 
             eyeSides, noseChecks, mouthChecks, eyeShapes, noseShapes, mouthShapes, eyeSizes, 
             noseSizes, mouthSizes, eyeRotations, noseRotations, mouthRotations):
-    largestRadius = [12,9,13,14,6,18,10,9,13,10,9,13,11,10,15,14,14,14,10,12]
+    largestRadius = [12,9,13,14,12,18,10,9,13,10,9,13,11,10,15,14,14,14,10,12]
     fluctuation = 5 #fluctuation mirrored features can be at
     eyeCentreCoords = []
     noseCentreCoords = []
@@ -932,7 +932,7 @@ def collision_detection(shape1, shape2):
 
 def decide_positions(face, featureGenOrder, eyeCentreCoords, noseCentreCoords, mouthCentreCoords, eyeShapes, side, noseShapes, 
     mouthShapes, eyeSizes, noseSizes, mouthSizes, currentFeature, check, individualGenOrder, alreadyY, eyesDone, noseDone, mouthDone, positionY=0):
-    largestRadius = [12,9,13,14,6,18,10,9,13,10,9,13,11,10,15,14,14,14,10,12]
+    largestRadius = [12,9,13,14,12,18,10,9,13,10,9,13,11,10,15,14,14,14,10,12]
 
     #initial allowed region parameters so theyre never not defined cuz that was happening more often than id like to admit
     leftEyeSide = 116
