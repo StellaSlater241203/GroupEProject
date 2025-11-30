@@ -711,36 +711,89 @@ def shape_gen_info(centreCoords, size, shape):
 
 
 
-def draw_shape(generatedShapes, shapeID, largestRadius, size, shapeInfo, currentFeature, rotationAngle, allowedRegionInfo = [], side = None):
+
+def draw_shape(centreCoords, generatedShapes, shapeID, largestRadius, size, shapeInfo, currentFeature, rotationAngle, allowedRegionInfo = [], side = None):
+    faceRect = pygame.Rect(52, 32, 152, 192) # compute bounding rectangle for the ellipse
+    faceSurface = pygame.Surface(faceRect.size, pygame.SRCALPHA)
+    pygame.draw.ellipse(faceSurface, black, (0, 0, *faceRect.size), 1) # draw the ellipse outline
+    faceSurf = [faceSurface, faceRect]
     
-        if shapeID == 0 or shapeID == 1: # ovals and circles
-            ellipseSurf = pygame.Surface(shapeInfo, pygame.SRCoALPHA)
-            pygame.draw.ellipse(ellipseSurf, black, shapeInfo, 1)
-            rotatedSurf = pygame.transform.rotate(ellipseSurf, rotationAngle)
-            if currentFeature = 0
-            
-        elif shapeID == 2 or shapeID == 3: # squares and rectangles
-            pygame.draw.rect(canvas, black, shapeInfo, 1)
-        elif shapeID == 4 or shapeID == 5: # lines and longer lines
-            pygame.draw.line(canvas, black, shapeInfo[0], shapeInfo[1], 1)
-        elif shapeID == 6 or shapeID == 7 or shapeID == 8: # curved, deep curved and wide curved lines
-            pygame.draw.arc(canvas, black, shapeInfo, 0, pi, 1)
-        elif shapeID == 9 or shapeID == 10 or shapeID == 11: # semi circle, vertical and horizontal semi oval
-            pygame.draw.arc(canvas, black, shapeInfo[0], 0, pi, 1)
-            pygame.draw.line(canvas, black, shapeInfo[1], shapeInfo[2], 1)
-        elif shapeID == 12 or shapeID == 13 or shapeID == 14 or shapeID == 15 or shapeID == 16 or shapeID == 18: # equ tri, long iso tri, wide iso tri, long trapezium, wide trapezium, star
-            pygame.draw.polygon(canvas, black, shapeInfo, 1)
-        elif shapeID == 17: # heart
-            pygame.draw.arc(canvas, black, shapeInfo[0], (pi/4), (5*pi/4), 1)
-            pygame.draw.arc(canvas, black, shapeInfo[1], (7*pi/4), (3*pi/4), 1)
-            pygame.draw.line(canvas, black, shapeInfo[2], shapeInfo[3], 1)
-            pygame.draw.line(canvas, black, shapeInfo[4], shapeInfo[5], 1)
-        elif shapeID == 19: # spiral
-            pygame.draw.arc(canvas, black, shapeInfo[0], 0, pi, 1)
-            pygame.draw.arc(canvas, black, shapeInfo[1], pi, 2*pi, 1)
-            pygame.draw.arc(canvas, black, shapeInfo[2], 0, pi, 1)
-            pygame.draw.arc(canvas, black, shapeInfo[3], pi, 2*pi, 1)
-            pygame.draw.arc(canvas, black, shapeInfo[4], 0, pi, 1)
+    x, y = centreCoords
+    extent = largestRadius * size
+    shapeSurfRect = pygame.Rect((x - extent), (y - extent), (extent * 2), (extent * 2))
+    shapeSurf = pygame.Surface(shapeSurfRect.size, pygame.SRCALPHA)
+    
+    boundaryBoxSurfRect = pygame.Rect(0, 0, 256, 256)
+    boundaryBoxSurf = pygame.Surface(boundaryBoxSurfRect.size, pygame.SRCALPHA)
+    
+    if shapeID == 0 or shapeID == 1: # ovals and circles
+        pygame.draw.ellipse(shapeSurf, black, shapeInfo, 1)
+    elif shapeID == 2 or shapeID == 3: # squares and rectangles
+        pygame.draw.rect(shapeSurf, black, shapeInfo, 1)
+    elif shapeID == 4 or shapeID == 5: # lines and longer lines
+        pygame.draw.line(shapeSurf, black, shapeInfo[0], shapeInfo[1], 1)
+    elif shapeID == 6 or shapeID == 7 or shapeID == 8: # curved, deep curved and wide curved lines
+        pygame.draw.arc(shapeSurf, black, shapeInfo, 0, pi, 1)
+    elif shapeID == 9 or shapeID == 10 or shapeID == 11: # semi circle, vertical and horizontal semi oval
+        pygame.draw.arc(shapeSurf, black, shapeInfo[0], 0, pi, 1)
+        pygame.draw.line(shapeSurf, black, shapeInfo[1], shapeInfo[2], 1)
+    elif shapeID == 12 or shapeID == 13 or shapeID == 14 or shapeID == 15 or shapeID == 16 or shapeID == 18: # equ tri, long iso tri, wide iso tri, long trapezium, wide trapezium, star
+        pygame.draw.polygon(shapeSurf, black, shapeInfo, 1)
+    elif shapeID == 17: # heart
+        pygame.draw.arc(shapeSurf, black, shapeInfo[0], (pi/4), (5*pi/4), 1)
+        pygame.draw.arc(shapeSurf, black, shapeInfo[1], (7*pi/4), (3*pi/4), 1)
+        pygame.draw.line(shapeSurf, black, shapeInfo[2], shapeInfo[3], 1)
+        pygame.draw.line(shapeSurf, black, shapeInfo[4], shapeInfo[5], 1)
+    elif shapeID == 19: # spiral
+        pygame.draw.arc(shapeSurf, black, shapeInfo[0], 0, pi, 1)
+        pygame.draw.arc(shapeSurf, black, shapeInfo[1], pi, 2*pi, 1)
+        pygame.draw.arc(shapeSurf, black, shapeInfo[2], 0, pi, 1)
+        pygame.draw.arc(shapeSurf, black, shapeInfo[3], pi, 2*pi, 1)
+        pygame.draw.arc(shapeSurf, black, shapeInfo[4], 0, pi, 1)
+    rotatedSurf = pygame.transform.rotate(shapeSurf, rotationAngle)
+    rotatedSurfRect = pygame.Surface.get_rect(rotatedSurf)
+    rotatedSurfListForCollision = [rotatedSurf, rotatedSurfRect]
+
+    if currentFeature == 0:
+        leftEyeRegionSide, rightEyeRegionSide, eyeRegionBottom = allowedRegionInfo
+        if side == "left":
+            EyeBoundaryBox = left_eye_boundary_box(xRight = leftEyeRegionSide, yBottom = eyeRegionBottom, surface = boundaryBoxSurf)
+            if collision_detection(rotatedSurfListForCollision, EyeBoundaryBox):
+                return True, generatedShapes
+            else:
+                pass
+        elif side == "right":
+            EyeBoundaryBox = right_eye_boundary_box(xLeft = rightEyeRegionSide, yBottom = eyeRegionBottom, surface = boundaryBoxSurf)
+            if collision_detection(rotatedSurfListForCollision, EyeBoundaryBox):
+                return True, generatedShapes
+            else:
+                pass
+        else:
+            pass
+    elif currentFeature == 1:
+        noseRegionLeft, noseRegionRight, noseRegionTop, noseRegionBottom = allowedRegionInfo
+        NoseBoundaryBox = nose_boundary_box(xLeft = noseRegionLeft, xRight = noseRegionRight, yTop = noseRegionTop, yBottom = noseRegionBottom, surface = boundaryBoxSurf)
+        if collision_detection(rotatedSurfListForCollision, NoseBoundaryBox): 
+            return True, generatedShapes
+        else:
+            pass
+    else:
+        mouthRegionTop = allowedRegionInfo
+        MouthBoundaryBox = mouth_boundary_box(yTop = mouthRegionTop, surface = boundaryBoxSurf)
+        if collision_detection(rotatedSurfListForCollision, MouthBoundaryBox):
+            return True, generatedShapes
+        else:
+            pass
+    for prevGenShape in generatedShapes:
+        if collision_detection(prevGenShape, rotatedSurfListForCollision):
+            return True, generatedShapes
+        else:
+            pass
+    if collision_detection(rotatedSurfListForCollision, faceSurf):
+        return True, generatedShapes
+    else:
+        generatedShapes.append(rotatedSurfListForCollision)
+        return False, generatedShapes
 
 
 
@@ -930,7 +983,7 @@ def decide_positions(face, featureGenOrder, eyeCentreCoords, noseCentreCoords, m
                     x = random.randint(rightEyeSide,188)
                     if alreadyY == True:
                         y = positionY
-                        print("gay")
+                        print("stuck in loop")
                     else:
                         y = random.randint(74,eyeBottom)
 
@@ -1006,6 +1059,7 @@ def decide_positions(face, featureGenOrder, eyeCentreCoords, noseCentreCoords, m
 
         if check == True: #if in allowed region
             x = random.randint(84,172)
+            print(mouthTop)
             y = random.randint(mouthTop,198)
         
         else: #if not in allowed region
@@ -1030,8 +1084,6 @@ def face_outline(surface):
     faceSurface = pygame.Surface(faceRect.size, pygame.SRCALPHA)
     pygame.draw.ellipse(faceSurface, black, (0, 0, *faceRect.size), 1) # draw the ellipse outline
     surface.blit(faceSurface, faceSurface.get_rect(center = faceRect.center))
-
-
 
 
 
