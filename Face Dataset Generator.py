@@ -218,8 +218,6 @@ def array_variable_generation(face, overlap):
     
     eyePos, nosePos, mouthPos = draw_face(face, featureGenOrder, featureNumbers, individualGenOrder, eyeChecks, eyeCopiesFrom, eyeSides, noseChecks, mouthChecks, eyeShapes, noseShapes, mouthShapes, eyeSizes, noseSizes, mouthSizes, eyeRotations, noseRotations, mouthRotations)
 
-
-
 #decide on pregen design would be defined and called here probably xx
 
 def generate_number_of_features(face, totalFeatureNumber, featureNumbers, currentFeature):
@@ -589,16 +587,17 @@ def left_or_right_eye(face, genOrder, copiesFrom, checks):
 
     return (leftOrRight, checks)
 
-
 def draw_face(face, featureGenOrder, featureNumbers, genOrder, eyeChecks, eyeCopiesFrom, 
             eyeSides, noseChecks, mouthChecks, eyeShapes, noseShapes, mouthShapes, eyeSizes, 
             noseSizes, mouthSizes, eyeRotations, noseRotations, mouthRotations):
+    largestRadius = [12,9,13,14,6,18,10,9,13,10,9,13,11,10,15,14,14,14,10,12]
     fluctuation = 5 #fluctuation mirrored features can be at
     eyeCentreCoords = []
     noseCentreCoords = []
     mouthCentreCoords = []
-    wasGenerated = []
-    boundarySurfsAndRects = []
+    eyeWasGenerated = []
+    noseWasGenerated = []
+    mouthWasGenerated = []
     generatedShapes = []
 
     for i in range(featureNumbers[0]):
@@ -614,25 +613,43 @@ def draw_face(face, featureGenOrder, featureNumbers, genOrder, eyeChecks, eyeCop
 
     globalIndex = 0
     for feature in genOrder: #for every feature on the face in the order they generate
-        if feature[1] == 0: #the second item in each list is the index of the feature it is (eg 0 is an eye)
-            index = feature[0] #first item is the ID of this feature
-            if eyeChecks[index][4] == True: #if this eye mirrors the position of another
-                copiesFromID = eyeCopiesFrom[index] #get index of eye it mirrors
-                positionY = eyeCentreCoords[copiesFromID][1] + random.randint((-fluctuation), fluctuation) #get y coord of eye it mirrors
-                eyeCentreCoords[feature[0]], leftEyeRegionSide, rightEyeRegionSide, eyeRegionBottom = decide_positions(face, featureGenOrder, eyeCentreCoords, noseCentreCoords, mouthCentreCoords, eyeShapes, eyeSides[feature[0]], noseShapes, mouthShapes, eyeSizes, noseSizes, mouthSizes, 0, eyeChecks[feature[0]][8], genOrder, True, eyesDone, noseDone, mouthDone, positionY)
+        collision = True
+        tries = 0
+        while collision == True and tries < 100:
+            if feature[1] == 0: #the second item in each list is the index of the feature it is (eg 0 is an eye)
+                index = feature[0] #first item is the ID of this feature
+                if eyeChecks[index][4] == True: #if this eye mirrors the position of another
+                    copiesFromID = eyeCopiesFrom[index] #get index of eye it mirrors
+                    positionY = eyeCentreCoords[copiesFromID][1] + random.randint((-fluctuation), fluctuation) #get y coord of eye it mirrors
+                    eyeCentreCoords[feature[0]], leftEyeRegionSide, rightEyeRegionSide, eyeRegionBottom = decide_positions(face, featureGenOrder, eyeCentreCoords, noseCentreCoords, mouthCentreCoords, eyeShapes, eyeSides[feature[0]], noseShapes, mouthShapes, eyeSizes, noseSizes, mouthSizes, 0, eyeChecks[feature[0]][8], genOrder, True, eyesDone, noseDone, mouthDone, positionY)
+                else:
+                    eyeCentreCoords[feature[0]], leftEyeRegionSide, rightEyeRegionSide, eyeRegionBottom = decide_positions(face, featureGenOrder, eyeCentreCoords, noseCentreCoords, mouthCentreCoords, eyeShapes, eyeSides[feature[0]], noseShapes, mouthShapes, eyeSizes, noseSizes, mouthSizes, 0, eyeChecks[feature[0]][8], genOrder, False, eyesDone, noseDone, mouthDone)
+                shapeInfo = shape_gen_info(eyeCentreCoords[feature[0]], eyeSizes[feature[0]], eyeShapes[feature[0]])
+                collision, generatedShapes = draw_shape(eyeCentreCoords[feature[0]], generatedShapes, eyeShapes[feature[0]], largestRadius[eyeShapes[feature[0]]], eyeSizes[feature[0]], shapeInfo, 0, eyeRotations[feature[0]], [leftEyeRegionSide, rightEyeRegionSide, eyeRegionBottom], eyeSides[feature[0]])
+                eyesDone = True #technically runs when the first eye is done but nothing else will run from here until all the eyes are done anyway, and this variable doesnt matter while the eyes are running
+            
+            elif feature[1] == 1:
+                noseCentreCoords[feature[0]], noseRegionLeft, noseRegionRight, noseRegionTop, noseRegionBottom = decide_positions(face, featureGenOrder, eyeCentreCoords, noseCentreCoords, mouthCentreCoords, eyeShapes, "", noseShapes, mouthShapes, eyeSizes, noseSizes, mouthSizes, 1, noseChecks[feature[0]][3], genOrder, False, eyesDone, noseDone, mouthDone)
+                shapeInfo = shape_gen_info(noseCentreCoords[feature[0]], noseSizes[feature[0]], noseShapes[feature[0]])
+                collision, generatedShapes = draw_shape(noseCentreCoords[feature[0]], generatedShapes, noseShapes[feature[0]], largestRadius[noseShapes[feature[0]]], noseSizes[feature[0]], shapeInfo, 0, noseRotations[feature[0]], [noseRegionLeft, noseRegionRight, noseRegionTop, noseRegionBottom])
+                noseDone = True
+            else: 
+                mouthCentreCoords[feature[0]], mouthRegionTop = decide_positions(face, featureGenOrder, eyeCentreCoords, noseCentreCoords, mouthCentreCoords, eyeShapes, "", noseShapes, mouthShapes, eyeSizes, noseSizes, mouthSizes, 2, mouthChecks[feature[0]][3], genOrder, False, eyesDone, noseDone, mouthDone)
+                shapeInfo = shape_gen_info(mouthCentreCoords[feature[0]], mouthSizes[feature[0]], mouthShapes[feature[0]])
+                collision, generatedShapes = draw_shape(mouthCentreCoords[feature[0]], generatedShapes, mouthShapes[feature[0]], largestRadius[mouthShapes[feature[0]]], mouthSizes[feature[0]], shapeInfo, 0, mouthRotations[feature[0]], [mouthRegionTop])
+                mouthDone = True
+            tries += 1
+        
+        if tries >= 100:
+            if feature[1] == 0:
+                eyeCentreCoords[feature[0]] = None
+                eyeWasGenerated[feature[0]] = None
+            if feature[1] == 1:
+                noseCentreCoords[feature[0]] = None
+                noseWasGenerated[feature[0]] = None
             else:
-                eyeCentreCoords[feature[0]], leftEyeRegionSide, rightEyeRegionSide, eyeRegionBottom = decide_positions(face, featureGenOrder, eyeCentreCoords, noseCentreCoords, mouthCentreCoords, eyeShapes, eyeSides[feature[0]], noseShapes, mouthShapes, eyeSizes, noseSizes, mouthSizes, 0, eyeChecks[feature[0]][8], genOrder, False, eyesDone, noseDone, mouthDone)
-            size = eyeSizes[feature[0]]
-            shapeID = eyeShapes[feature[0]]
-            shapeInfo = shape_gen_info(eyeCentreCoords[feature[0]], size, shapeID)
-            eyesDone = True #technically runs when the first eye is done but nothing else will run from here until all the eyes are done anyway, and this variable doesnt matter while the eyes are running
-        elif feature[1] == 1:
-            noseCentreCoords[feature[0]], noseRegionLeft, noseRegionRight, noseRegionTop, noseRegionBottom = decide_positions(face, featureGenOrder, eyeCentreCoords, noseCentreCoords, mouthCentreCoords, eyeShapes, "", noseShapes, mouthShapes, eyeSizes, noseSizes, mouthSizes, 1, noseChecks[feature[0]][3], genOrder, False, eyesDone, noseDone, mouthDone)
-            #this is where making shape to be drawn info and collision calling goes also i think, unless its at the end
-            noseDone = True
-        else: 
-            mouthCentreCoords[feature[0]], mouthRegionTop = decide_positions(face, featureGenOrder, eyeCentreCoords, noseCentreCoords, mouthCentreCoords, eyeShapes, "", noseShapes, mouthShapes, eyeSizes, noseSizes, mouthSizes, 2, mouthChecks[feature[0]][3], genOrder, False, eyesDone, noseDone, mouthDone)
-            mouthDone = True
+                mouthCentreCoords[feature[0]] = None
+                mouthWasGenerated[feature[0]] = None
 
 
 def shape_gen_info(centreCoords, size, shape):
@@ -654,13 +671,13 @@ def shape_gen_info(centreCoords, size, shape):
             [x + round(coordList[shape][0]*size), y + round(coordList[shape][1]*size)],
             [x + round(coordList[shape][2]*size), y + round(coordList[shape][3]*size)],
             [x + round(coordList[shape][4]*size), y + round(coordList[shape][5]*size)]]
-    elif shape == 15 or shape == 16:
+    elif shape == 15 or shape == 16: #trapeziums
         coords = [
             [x + round(coordList[shape][0]*size), y + round(coordList[shape][1]*size)],
             [x + round(coordList[shape][2]*size), y + round(coordList[shape][3]*size)],
             [x + round(coordList[shape][4]*size), y + round(coordList[shape][5]*size)],
             [x + round(coordList[shape][6]*size), y + round(coordList[shape][7]*size)]]
-    elif shape == 18:
+    elif shape == 18: #star
         coords = [
             [x + round(coordList[shape][0]*size),  y + round(coordList[shape][1]*size)],
             [x + round(coordList[shape][2]*size),  y + round(coordList[shape][3]*size)],
@@ -672,7 +689,7 @@ def shape_gen_info(centreCoords, size, shape):
             [x + round(coordList[shape][14]*size), y + round(coordList[shape][15]*size)],
             [x + round(coordList[shape][16]*size), y + round(coordList[shape][17]*size)],
             [x + round(coordList[shape][18]*size), y + round(coordList[shape][19]*size)]]
-    elif shape == 17:
+    elif shape == 17: #heart
         coords = [
             [x + round(coordList[shape][0]*size),  y + round(coordList[shape][1]*size),  round(coordList[shape][2]*size),  round(coordList[shape][3]*size)],
             [x + round(coordList[shape][4]*size),  y + round(coordList[shape][5]*size),  round(coordList[shape][6]*size),  round(coordList[shape][7]*size)],
@@ -680,22 +697,21 @@ def shape_gen_info(centreCoords, size, shape):
             [x + round(coordList[shape][10]*size), y + round(coordList[shape][11]*size)],
             [x + round(coordList[shape][12]*size), y + round(coordList[shape][13]*size)],
             [x + round(coordList[shape][14]*size), y + round(coordList[shape][15]*size)]]
-    elif shape == 19:
+    elif shape == 19: #spiral
         coords = [
             [x + round(coordList[shape][0]*size),  y + round(coordList[shape][1]*size),  round(coordList[shape][2]*size),  round(coordList[shape][3]*size)],
             [x + round(coordList[shape][4]*size),  y + round(coordList[shape][5]*size),  round(coordList[shape][6]*size),  round(coordList[shape][7]*size)],
             [x + round(coordList[shape][8]*size),  y + round(coordList[shape][9]*size),  round(coordList[shape][10]*size), round(coordList[shape][11]*size)],
             [x + round(coordList[shape][12]*size), y + round(coordList[shape][13]*size), round(coordList[shape][14]*size), round(coordList[shape][15]*size)],
             [x + round(coordList[shape][16]*size), y + round(coordList[shape][17]*size), round(coordList[shape][18]*size), round(coordList[shape][19]*size)]]
-    else:
+    else: #oval and circle
         coords = [x + round(coordList[shape][0]*size), y + round(coordList[shape][1]*size), round(coordList[shape][2]*size), round(coordList[shape][3]*size)]
 
     return coords
 
 
 
-
-def draw_shape(shapeID, largestRadius, size, shapeInfo, currentFeature, rotationAngle, allowedRegionInfo = [], side = None):
+def draw_shape(generatedShapes, shapeID, largestRadius, size, shapeInfo, currentFeature, rotationAngle, allowedRegionInfo = [], side = None):
     
         if shapeID == 0 or shapeID == 1: # ovals and circles
             ellipseSurf = pygame.Surface(shapeInfo, pygame.SRCoALPHA)
@@ -876,7 +892,7 @@ def decide_positions(face, featureGenOrder, eyeCentreCoords, noseCentreCoords, m
     mouthTop = 132
 
     if currentFeature == 0: #eye passed in
-        if face == True and noseDone == True: #the only conditions that will change the shape of the eye allowed regions
+        if face == True and noseDone == True and noseCentreCoords != [] and noseCentreCoords[0] != None: #the only conditions that will change the shape of the eye allowed regions
             shapeindex = noseShapes[0] # get nose shape
             size = noseSizes[0] # and its size
             lradius = largestRadius[shapeindex]*size # calc radius of bounding box for furthest away point from centre of the nose multiplied by size mult
@@ -932,7 +948,7 @@ def decide_positions(face, featureGenOrder, eyeCentreCoords, noseCentreCoords, m
                     y = random.randint(32,224)
 
     elif currentFeature == 1: #nose passed in
-        if face == True and eyesDone == True:
+        if face == True and eyesDone == True and eyeCentreCoords[0] != None and eyeCentreCoords[1] != None:
             lowestPoints = []
             for i in range(0,len(eyeCentreCoords)): # for each eye
                 ycoord = eyeCentreCoords[i][1] # get y coord of eye
@@ -955,7 +971,7 @@ def decide_positions(face, featureGenOrder, eyeCentreCoords, noseCentreCoords, m
             if noseRight > rightestPoint: #if the leftmost point of the right eye encroaches into the nose region
                 noseRight = rightestPoint
 
-        if face == True and mouthDone == True:
+        if face == True and mouthDone == True and mouthCentreCoords[0] != None:
             shapeindex = mouthShapes[0] # get mouth shape
             size = mouthSizes[0] # and its size
             lradius = largestRadius[shapeindex]*size # calc radius of bounding box for furthest away point from centre of the mouth multiplied by size mult
@@ -979,7 +995,7 @@ def decide_positions(face, featureGenOrder, eyeCentreCoords, noseCentreCoords, m
                 y = random.randint(32,224) #anywhere in face as long as its not in the nose allowed region
 
     else: #mouth passed in
-        if face == True and noseDone == True:
+        if face == True and noseDone == True and noseCentreCoords != [] and noseCentreCoords[0] != None:
             shapeindex = noseShapes[0] # get nose shape
             size = noseSizes[0] # and its size
             lradius = largestRadius[shapeindex]*size # calc radius of bounding box for furthest away point from centre of the nose multiplied by size mult

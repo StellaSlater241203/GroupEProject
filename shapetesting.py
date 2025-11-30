@@ -32,7 +32,7 @@ pygame.display.set_caption("Show Image")
 
 coordList = [[-12,-6,24,12],[-9,-9,18,18],[-9,-9,18,18],[-12,-6,24,12],[-12,0,12,0],[-16,0,16,0],[-9,-4.5,18,18],[-6,-6,12,24],[-12,-3,24,12],[-9,-4.5,18,18,-9,4.5,9,4.5],[-6,-6,12,24,-6,6,6,6],[-12,-3,24,12,-12,3,12,3],[-9,6,9,6,0,-10],[-6,8,6,8,0,-16],[-14,5,14,5,0,-5],[-4,-12,4,-12,6,12,-6,12],[-8,-6,8,-6,12,6,-12,6],[-11,-8,13,13,0,-8,13,13,-9,2,0,10,9,2,0,10],[0,-9,2,-3,9,-3,3,1,5,7,0,4,-5,7,-3,1,-9,-3,-2,-3],[-2,-2,4,4,-6,-4,8,8,-6,-6,12,12,-10,-8,16,16,-10,-10,20,20,-14,-12,24,24]]
 #                oval=0       circle=1      square=2        rect=3        
-
+largestRadius = [12,9,13,14,6,18,10,9,13,10,9,13,11,10,15,14,14,14,10,12]
 '''for i in range(len(coordList)):
     coordx = random.randint(20,236)
     coordy = random.randint(20,236)
@@ -64,8 +64,10 @@ for i in range(len(coordList)):
         coords = [[coordx + coordList[i][0], coordy + coordList[i][1], coordList[i][2], coordList[i][3]], [coordx + coordList[i][4], coordy + coordList[i][5], coordList[i][6], coordList[i][7]], [coordx + coordList[i][8], coordy + coordList[i][9], coordList[i][10], coordList[i][11]], [coordx + coordList[i][12], coordy + coordList[i][13], coordList[i][14], coordList[i][15]], [coordx + coordList[i][16], coordy + coordList[i][17], coordList[i][18], coordList[i][19]]]
     else:
         coords = [coordx + coordList[i][0], coordy + coordList[i][1], coordList[i][2], coordList[i][3]]
+
     if i == 0 or i == 1:
         pygame.draw.ellipse(canvas, black, coords, 1)
+        pygame.draw.rect(canvas, black, (coordx-largestRadius[i], coordy-largestRadius[i], largestRadius[i]*2, largestRadius[i]*2), 1)
     elif i == 2 or i == 3:
         pygame.draw.rect(canvas, black, coords, 1)
     elif i == 4 or i == 5:
