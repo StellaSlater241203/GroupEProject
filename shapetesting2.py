@@ -16,6 +16,9 @@ pygame.display.set_caption("Shape Testing 2 - Collision Detection with screen wi
 # Colours
 black = (0, 0, 0)
 white = (255, 255, 255)
+red = (255, 0, 0)
+
+screen.fill(white)
 
 def collision_detection(shape1, shape2):
     surface1, pos1 = shape1
@@ -29,10 +32,42 @@ def collision_detection(shape1, shape2):
     return False
 
 
+def draw_randomly_placed_rectangle(surface, colour, x, y):
+    rectRect = pygame.Rect(0, 0, 256, 256)
+    surfRect = pygame.Surface(rectRect.size, pygame.SRCALPHA)
+    pygame.draw.rect(surfRect, colour, (x, y, 20, 30), 1)
+    rotatedsurf = pygame.transform.rotate(surfRect, 60)
+    surface.blit(rotatedsurf, rotatedsurf.get_rect(center = rectRect.center))
+    rectShape = [surfRect, rectRect]
+    return rectShape
+
 def face_outline(surface):
     faceRect = pygame.Rect(0, 0, 256, 256) # compute bounding rectangle for the ellipse
     faceSurface = pygame.Surface(faceRect.size, pygame.SRCALPHA)
-    pygame.draw.ellipse(faceSurface, black, (52, 32, 192, 152), 1) # draw the ellipse outline
+    pygame.draw.ellipse(faceSurface, black, (52, 32, 152, 192), 1) # draw the ellipse outline
     surface.blit(faceSurface, faceSurface.get_rect(center = faceRect.center))
+    faceShape = [faceSurface, faceRect]
+    return faceShape
 
-pygame.display.flip()
+
+j = 0
+for i in range(1):
+    faceShape = face_outline(screen)
+    x, y = 30, 30 
+    rectShape = draw_randomly_placed_rectangle(screen, black, x, y)
+    pygame.display.flip()
+    time.sleep(0.05)
+
+
+
+
+running = True
+while running == True:
+    for event in pygame.event.get():
+        if event.type == pygame.QUIT:
+            running = False
+    
+    pygame.display.flip()
+
+
+pygame.quit()
