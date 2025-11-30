@@ -30,8 +30,8 @@ canvas.fill(white)
 pygame.display.set_caption("Show Image")
 
 
-coordList = [[-12,-6,24,12],[-9,-9,18,18],[-9,-9,18,18],[-12,-6,24,12],[-12,0,12,0],[-16,0,16,0],[-9,-4.5,18,18],[-6,-6,12,24],[-12,-3,24,12],[-9,-4.5,18,18,-9,4.5,9,4.5],[-6,-6,12,24,-6,6,6,6],[-12,-3,24,12,-12,3,12,3],[-9,8,9,8,0,-8],[-6,12,6,12,0,-12],[-14,5,14,5,0,-5],[-4,-12,4,-12,6,12,-6,12],[-8,-6,8,-6,12,6,-12,6],[-11,-8,13,13,0,-8,13,13,-9,2,0,10,9,2,0,10],[0,-9,2,-3,9,-3,3,1,5,7,0,4,-5,7,-3,1,-9,-3,-2,-3],[-2,-2,4,4,-6,-4,8,8,-6,-6,12,12,-10,-8,16,16,-10,-10,20,20,-14,-12,24,24]]
-#                oval=0       circle=1      square=2        rect=3        line=4     longline=5    curvedline=6  dcurvedline=7  wcurvedline=8         semicircle=9               hsemioval=10            vsemioval=11         etriangle=12     litriangle=13    witriangle=14
+coordList = [[-12,-6,24,12],[-9,-9,18,18],[-9,-9,18,18],[-12,-6,24,12],[-12,0,12,0],[-16,0,16,0],[-9,-4.5,18,18],[-6,-6,12,24],[-12,-3,24,12],[-9,-4.5,18,18,-9,4.5,9,4.5],[-6,-6,12,24,-6,6,6,6],[-12,-3,24,12,-12,3,12,3],[-9,8,9,8,0,-8],[-6,12,6,12,0,-12],[-14,5,14,5,0,-5],[-4,-12,4,-12,6,12,-6,12],[-8,-6,8,-6,12,6,-12,6],[-11,-9,12,12,-1,-9,12,12,-8,2,0,9,8,2,0,9],[0,-8,2,-2,9,-2,3,2,5,8,0,5,-5,8,-3,2,-9,-2,-2,-2],[-2,-2,4,4,-6,-4,8,8,-6,-6,12,12,-10,-8,16,16,-10,-10,20,20,-14,-12,24,24]]
+#                oval=0       circle=1      square=2        rect=3        line=4     longline=5    curvedline=6  dcurvedline=7  wcurvedline=8         semicircle=9               hsemioval=10            vsemioval=11         etriangle=12     litriangle=13    witriangle=14        longtrapezium=15          widetrapezium=16                     heart=17                                        star=18                                                          spiral=19
 largestRadius = [12,9,13,14,12,18,10,9,13,10,9,13,11,10,15,14,14,14,10,12]
 '''for i in range(len(coordList)):
     coordx = random.randint(20,236)
@@ -75,24 +75,27 @@ for i in range(len(coordList)):
         pygame.draw.rect(canvas, black, (coordx-12,coordy+0, 24, 1), 1)
     elif i == 6 or i == 7 or i == 8:
         pygame.draw.arc(canvas, black, coords, 0, pi, 1)
-        pygame.draw.rect(canvas, black, coords, 1)
     elif i == 9 or i == 10 or i == 11:
         pygame.draw.arc(canvas, black, coords[0], 0, pi, 1)
         pygame.draw.line(canvas, black, coords[1], coords[2], 1)
+        pygame.draw.rect(canvas, red, (coordx-9, coordy-4.5,18,10), 1)
     elif i == 12 or i == 13 or i == 14 or i == 15 or i == 16 or i == 18:
         pygame.draw.polygon(canvas, black, coords, 1)
-        pygame.draw.rect(canvas, (255,0,0), (coordx-9,coordy-8,18,16), 1)
+        pygame.draw.rect(canvas, (255,0,0), (coordx-9, coordy-9, 19, 19), 1)
     elif i == 17:
         pygame.draw.arc(canvas, black, coords[0], (pi/4), (5*pi/4), 1)
         pygame.draw.arc(canvas, black, coords[1], (7*pi/4), (3*pi/4), 1)
         pygame.draw.line(canvas, black, coords[2], coords[3], 1)
         pygame.draw.line(canvas, black, coords[4], coords[5], 1)
+        pygame.draw.rect(canvas, red, (coordx,coordy,1,1), 1)
+        pygame.draw.rect(canvas, black, (coordx-11,coordy-9,22,19), 1)
     elif i == 19:
         pygame.draw.arc(canvas, black, coords[0], 0, pi, 1)
         pygame.draw.arc(canvas, black, coords[1], pi, 2*pi, 1)
         pygame.draw.arc(canvas, black, coords[2], 0, pi, 1)
         pygame.draw.arc(canvas, black, coords[3], pi, 2*pi, 1)
         pygame.draw.arc(canvas, black, coords[4], 0, pi, 1)
+        pygame.draw.rect(canvas, black, (coordx-10,coordy-10,20,18), 1)
     #pygame.draw.rect(canvas, (255,0,0), (coordx-largestRadius[i], coordy-largestRadius[i], largestRadius[i]*2, largestRadius[i]*2), 1)
 
     coordx += 64
