@@ -50,6 +50,13 @@ def face_outline(surface):
     return faceShape
 
 
+linerect = pygame.Rect(30, 50, 45, 1)
+linesurf = pygame.Surface(linerect.size, pygame.SRCALPHA)
+pygame.draw.line(linesurf, black, (0, 0), (45, 0), 1)
+screen.blit(linesurf, linesurf.get_rect(center = linerect.center))
+
+
+
 j = 0
 for i in range(1):
     faceShape = face_outline(screen)

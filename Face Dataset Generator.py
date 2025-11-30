@@ -625,18 +625,26 @@ def draw_face(face, featureGenOrder, featureNumbers, genOrder, eyeChecks, eyeCop
                 else:
                     eyeCentreCoords[feature[0]], leftEyeRegionSide, rightEyeRegionSide, eyeRegionBottom = decide_positions(face, featureGenOrder, eyeCentreCoords, noseCentreCoords, mouthCentreCoords, eyeShapes, eyeSides[feature[0]], noseShapes, mouthShapes, eyeSizes, noseSizes, mouthSizes, 0, eyeChecks[feature[0]][8], genOrder, False, eyesDone, noseDone, mouthDone)
                 shapeInfo = shape_gen_info(eyeCentreCoords[feature[0]], eyeSizes[feature[0]], eyeShapes[feature[0]])
-                collision, generatedShapes = draw_shape(eyeCentreCoords[feature[0]], generatedShapes, eyeShapes[feature[0]], largestRadius[eyeShapes[feature[0]]], eyeSizes[feature[0]], shapeInfo, 0, eyeRotations[feature[0]], [leftEyeRegionSide, rightEyeRegionSide, eyeRegionBottom], eyeSides[feature[0]])
+                collision, generatedShapes = draw_shape(eyeCentreCoords[feature[0]], generatedShapes, eyeShapes[feature[0]], 
+                largestRadius[eyeShapes[feature[0]]], eyeSizes[feature[0]], shapeInfo, 
+                0, eyeRotations[feature[0]], [leftEyeRegionSide, rightEyeRegionSide, eyeRegionBottom], eyeSides[feature[0]])
                 eyesDone = True #technically runs when the first eye is done but nothing else will run from here until all the eyes are done anyway, and this variable doesnt matter while the eyes are running
             
             elif feature[1] == 1:
                 noseCentreCoords[feature[0]], noseRegionLeft, noseRegionRight, noseRegionTop, noseRegionBottom = decide_positions(face, featureGenOrder, eyeCentreCoords, noseCentreCoords, mouthCentreCoords, eyeShapes, "", noseShapes, mouthShapes, eyeSizes, noseSizes, mouthSizes, 1, noseChecks[feature[0]][3], genOrder, False, eyesDone, noseDone, mouthDone)
                 shapeInfo = shape_gen_info(noseCentreCoords[feature[0]], noseSizes[feature[0]], noseShapes[feature[0]])
-                collision, generatedShapes = draw_shape(noseCentreCoords[feature[0]], generatedShapes, noseShapes[feature[0]], largestRadius[noseShapes[feature[0]]], noseSizes[feature[0]], shapeInfo, 0, noseRotations[feature[0]], [noseRegionLeft, noseRegionRight, noseRegionTop, noseRegionBottom])
+                print(noseRegionLeft, noseRegionRight, noseRegionTop, noseRegionBottom)
+                collision, generatedShapes = draw_shape(noseCentreCoords[feature[0]], generatedShapes, noseShapes[feature[0]], 
+                                                        largestRadius[noseShapes[feature[0]]], noseSizes[feature[0]], shapeInfo, 
+                                                        1, noseRotations[feature[0]], [noseRegionLeft, noseRegionRight, noseRegionTop, 
+                                                        noseRegionBottom])
                 noseDone = True
             else: 
                 mouthCentreCoords[feature[0]], mouthRegionTop = decide_positions(face, featureGenOrder, eyeCentreCoords, noseCentreCoords, mouthCentreCoords, eyeShapes, "", noseShapes, mouthShapes, eyeSizes, noseSizes, mouthSizes, 2, mouthChecks[feature[0]][3], genOrder, False, eyesDone, noseDone, mouthDone)
                 shapeInfo = shape_gen_info(mouthCentreCoords[feature[0]], mouthSizes[feature[0]], mouthShapes[feature[0]])
-                collision, generatedShapes = draw_shape(mouthCentreCoords[feature[0]], generatedShapes, mouthShapes[feature[0]], largestRadius[mouthShapes[feature[0]]], mouthSizes[feature[0]], shapeInfo, 0, mouthRotations[feature[0]], [mouthRegionTop])
+                collision, generatedShapes = draw_shape(mouthCentreCoords[feature[0]], generatedShapes, mouthShapes[feature[0]], 
+                                                        largestRadius[mouthShapes[feature[0]]], mouthSizes[feature[0]], shapeInfo, 
+                                                        2, mouthRotations[feature[0]], [mouthRegionTop])
                 mouthDone = True
             tries += 1
         
@@ -755,6 +763,7 @@ def draw_shape(centreCoords, generatedShapes, shapeID, largestRadius, size, shap
     rotatedSurfListForCollision = [rotatedSurf, rotatedSurfRect]
 
     if currentFeature == 0:
+        
         leftEyeRegionSide, rightEyeRegionSide, eyeRegionBottom = allowedRegionInfo
         if side == "left":
             EyeBoundaryBox = left_eye_boundary_box(xRight = leftEyeRegionSide, yBottom = eyeRegionBottom, surface = boundaryBoxSurf)
