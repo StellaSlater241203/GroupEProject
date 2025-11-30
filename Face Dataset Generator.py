@@ -801,6 +801,7 @@ def draw_shape(centreCoords, generatedShapes, shapeID, largestRadius, size, shap
     if collision_detection(rotatedSurfListForCollision, faceSurf):
         return True, generatedShapes
     else:
+        canvas.blit(rotatedSurf, rotatedSurf.get_rect(center = rotatedSurfRect.center))
         generatedShapes.append(rotatedSurfListForCollision)
         return False, generatedShapes
 
