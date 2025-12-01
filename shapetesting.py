@@ -57,7 +57,16 @@ for i in range(len(coordList)):
     elif i == 15 or i == 16:
         coords = [[coordx + coordList[i][0], coordy + coordList[i][1]], [coordx + coordList[i][2], coordy + coordList[i][3]], [coordx + coordList[i][4], coordy + coordList[i][5]], [coordx + coordList[i][6], coordy + coordList[i][7]]]
     elif i == 18:
-        coords = [[coordx + coordList[i][0], coordy + coordList[i][1]], [coordx + coordList[i][2], coordy + coordList[i][3]], [coordx + coordList[i][4], coordy + coordList[i][5]], [coordx + coordList[i][6], coordy + coordList[i][7]], [coordx + coordList[i][8], coordy + coordList[i][9]], [coordx + coordList[i][10], coordy + coordList[i][11]], [coordx + coordList[i][12], coordy + coordList[i][13]], [coordx + coordList[i][14], coordy + coordList[i][15]], [coordx + coordList[i][16], coordy + coordList[i][17]], [coordx + coordList[i][18], coordy + coordList[i][19]]]
+        coords = [[coordx + coordList[i][0], coordy + coordList[i][1]],
+                [coordx + coordList[i][2], coordy + coordList[i][3]],
+                [coordx + coordList[i][4], coordy + coordList[i][5]],
+                [coordx + coordList[i][6], coordy + coordList[i][7]],
+                [coordx + coordList[i][8], coordy + coordList[i][9]],
+                [coordx + coordList[i][10], coordy + coordList[i][11]],
+                [coordx + coordList[i][12], coordy + coordList[i][13]],
+                [coordx + coordList[i][14], coordy + coordList[i][15]],
+                [coordx + coordList[i][16], coordy + coordList[i][17]],
+                [coordx + coordList[i][18], coordy + coordList[i][19]]]
     elif i == 17:
         coords = [[coordx + coordList[i][0], coordy + coordList[i][1], coordList[i][2], coordList[i][3]], [coordx + coordList[i][4], coordy + coordList[i][5], coordList[i][6], coordList[i][7]], [coordx + coordList[i][8], coordy + coordList[i][9]], [coordx + coordList[i][10], coordy + coordList[i][11]], [coordx + coordList[i][12], coordy + coordList[i][13]], [coordx + coordList[i][14], coordy + coordList[i][15]]]
     elif i == 19:
