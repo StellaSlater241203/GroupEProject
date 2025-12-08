@@ -1,5 +1,6 @@
 import tkinter
 import pygame
+from pygame import gfxdraw
 import math
 import random
 from random import shuffle
@@ -9,7 +10,7 @@ import time
 
 '''BOUNDARY BOX NEEDS ITS SURFACE TO BE THE SAME SIZE AS IT OTHERWISE COLLISION DOESNT WORK'''
 
-pygame.init() #initialise pygame windowk
+pygame.init() #initialise pygame window
 
 CANVAS_W, CANVAS_H = 256, 256
 FACE_LEFT, FACE_TOP, FACE_RIGHT, FACE_BOTTOM = 52, 32, 204, 224
@@ -637,33 +638,28 @@ def draw_face(face, featureGenOrder, featureNumbers, genOrder, eyeChecks, eyeCop
                     copiesFromID = eyeCopiesFrom[feature[0]] #get index of eye it mirrors
                     if eyeCentreCoords[copiesFromID] != None:
                         positionY = eyeCentreCoords[copiesFromID][1] + random.randint((-fluctuation), fluctuation) #get y coord of eye it mirrors
-                        eyeCentreCoords[feature[0]], leftEyeRegionSide, rightEyeRegionSide, eyeRegionBottom, eyeSuccess = decide_positions(face, featureGenOrder, eyeCentreCoords, noseCentreCoords, mouthCentreCoords, eyeShapes, eyeSides[feature[0]], noseShapes, mouthShapes, eyeSizes, noseSizes, mouthSizes, 0, eyeChecks[feature[0]][8], genOrder, True, eyesDone, noseDone, mouthDone, positionY)
+                        eyeCentreCoords[feature[0]], leftEyeRegionSide, rightEyeRegionSide, eyeRegionBottom, eyeSuccess = decide_positions(face, eyeShapes[feature[0]], eyeSizes[feature[0]], featureGenOrder, eyeCentreCoords, noseCentreCoords, mouthCentreCoords, eyeShapes, eyeSides[feature[0]], noseShapes, mouthShapes, eyeSizes, noseSizes, mouthSizes, 0, eyeChecks[feature[0]][8], genOrder, True, eyesDone, noseDone, mouthDone, positionY)
                     else: #the eye this one copies from didnt end up generating, so its coords are still None, and therefore cannot be copied from
                         eyeChecks[feature[0]][4] = False
-                        eyeCentreCoords[feature[0]], leftEyeRegionSide, rightEyeRegionSide, eyeRegionBottom, eyeSuccess = decide_positions(face, featureGenOrder, eyeCentreCoords, noseCentreCoords, mouthCentreCoords, eyeShapes, eyeSides[feature[0]], noseShapes, mouthShapes, eyeSizes, noseSizes, mouthSizes, 0, eyeChecks[feature[0]][8], genOrder, False, eyesDone, noseDone, mouthDone)
+                        eyeCentreCoords[feature[0]], leftEyeRegionSide, rightEyeRegionSide, eyeRegionBottom, eyeSuccess = decide_positions(face, eyeShapes[feature[0]], eyeSizes[feature[0]], featureGenOrder, eyeCentreCoords, noseCentreCoords, mouthCentreCoords, eyeShapes, eyeSides[feature[0]], noseShapes, mouthShapes, eyeSizes, noseSizes, mouthSizes, 0, eyeChecks[feature[0]][8], genOrder, False, eyesDone, noseDone, mouthDone)
                 else:
-                    eyeCentreCoords[feature[0]], leftEyeRegionSide, rightEyeRegionSide, eyeRegionBottom, eyeSuccess = decide_positions(face, featureGenOrder, eyeCentreCoords, noseCentreCoords, mouthCentreCoords, eyeShapes, eyeSides[feature[0]], noseShapes, mouthShapes, eyeSizes, noseSizes, mouthSizes, 0, eyeChecks[feature[0]][8], genOrder, False, eyesDone, noseDone, mouthDone)
+                    eyeCentreCoords[feature[0]], leftEyeRegionSide, rightEyeRegionSide, eyeRegionBottom, eyeSuccess = decide_positions(face, eyeShapes[feature[0]], eyeSizes[feature[0]], featureGenOrder, eyeCentreCoords, noseCentreCoords, mouthCentreCoords, eyeShapes, eyeSides[feature[0]], noseShapes, mouthShapes, eyeSizes, noseSizes, mouthSizes, 0, eyeChecks[feature[0]][8], genOrder, False, eyesDone, noseDone, mouthDone)
                 shapeInfo, rectInfo = shape_gen_info(eyeCentreCoords[feature[0]], eyeSizes[feature[0]], eyeShapes[feature[0]])
-                collision, generatedShapes = draw_shape(eyeCentreCoords[feature[0]], generatedShapes, eyeShapes[feature[0]], 
-                                                        largestRadius[eyeShapes[feature[0]]], eyeSizes[feature[0]], shapeInfo, rectInfo, 
-                                                        0, eyeRotations[feature[0]], [leftEyeRegionSide, rightEyeRegionSide, eyeRegionBottom], eyeSides[feature[0]])
+                collision, generatedShapes = draw_shape(eyeCentreCoords[feature[0]], generatedShapes, eyeShapes[feature[0]], largestRadius[eyeShapes[feature[0]]], eyeSizes[feature[0]], shapeInfo, rectInfo, 0, eyeRotations[feature[0]], [leftEyeRegionSide, rightEyeRegionSide, eyeRegionBottom], eyeSides[feature[0]])
                 eyesDone = True #technically runs when the first eye is done but nothing else will run from here until all the eyes are done anyway, and this variable doesnt matter while the eyes are running
                 if eyeSuccess == False:
                     eyeWasGenerated[feature[0]] = False
 
             elif feature[1] == 1:
-                noseCentreCoords[feature[0]], noseRegionLeft, noseRegionRight, noseRegionTop, noseRegionBottom, noseSuccess = decide_positions(face, featureGenOrder, eyeCentreCoords, noseCentreCoords, mouthCentreCoords, eyeShapes, "", noseShapes, mouthShapes, eyeSizes, noseSizes, mouthSizes, 1, noseChecks[feature[0]][3], genOrder, False, eyesDone, noseDone, mouthDone)
+                noseCentreCoords[feature[0]], noseRegionLeft, noseRegionRight, noseRegionTop, noseRegionBottom, noseSuccess = decide_positions(face, noseShapes[feature[0]], noseSizes[feature[0]], featureGenOrder, eyeCentreCoords, noseCentreCoords, mouthCentreCoords, eyeShapes, "", noseShapes, mouthShapes, eyeSizes, noseSizes, mouthSizes, 1, noseChecks[feature[0]][3], genOrder, False, eyesDone, noseDone, mouthDone)
                 shapeInfo, rectInfo = shape_gen_info(noseCentreCoords[feature[0]], noseSizes[feature[0]], noseShapes[feature[0]])
                 print("nose boundaries", noseRegionLeft, noseRegionRight, noseRegionTop, noseRegionBottom)
-                collision, generatedShapes = draw_shape(noseCentreCoords[feature[0]], generatedShapes, noseShapes[feature[0]], 
-                                                        largestRadius[noseShapes[feature[0]]], noseSizes[feature[0]], shapeInfo, rectInfo, 
-                                                        1, noseRotations[feature[0]], [noseRegionLeft, noseRegionRight, noseRegionTop, 
-                                                        noseRegionBottom])
+                collision, generatedShapes = draw_shape(noseCentreCoords[feature[0]], generatedShapes, noseShapes[feature[0]], largestRadius[noseShapes[feature[0]]], noseSizes[feature[0]], shapeInfo, rectInfo, 1, noseRotations[feature[0]], [noseRegionLeft, noseRegionRight, noseRegionTop, noseRegionBottom])
                 noseDone = True
                 if noseSuccess == False:
                     noseWasGenerated[feature[0]] = False
             else: 
-                mouthCentreCoords[feature[0]], mouthRegionTop, mouthSuccess = decide_positions(face, featureGenOrder, eyeCentreCoords, noseCentreCoords, mouthCentreCoords, eyeShapes, "", noseShapes, mouthShapes, eyeSizes, noseSizes, mouthSizes, 2, mouthChecks[feature[0]][3], genOrder, False, eyesDone, noseDone, mouthDone)
+                mouthCentreCoords[feature[0]], mouthRegionTop, mouthSuccess = decide_positions(face, mouthShapes[feature[0]], mouthSizes[feature[0]], featureGenOrder, eyeCentreCoords, noseCentreCoords, mouthCentreCoords, eyeShapes, "", noseShapes, mouthShapes, eyeSizes, noseSizes, mouthSizes, 2, mouthChecks[feature[0]][3], genOrder, False, eyesDone, noseDone, mouthDone)
                 shapeInfo, rectInfo = shape_gen_info(mouthCentreCoords[feature[0]], mouthSizes[feature[0]], mouthShapes[feature[0]])
                 collision, generatedShapes = draw_shape(mouthCentreCoords[feature[0]], generatedShapes, mouthShapes[feature[0]], 
                                                         largestRadius[mouthShapes[feature[0]]], mouthSizes[feature[0]], shapeInfo, rectInfo, 
@@ -699,11 +695,6 @@ def draw_face(face, featureGenOrder, featureNumbers, genOrder, eyeChecks, eyeCop
         if i == False:
             face = False
                 
-    if face:
-        faceString = "Face"
-    else:
-        faceString = "Not Face"
-    pygame.display.set_caption(faceString) #this is just for testing
 
     return(face)
 
@@ -964,8 +955,9 @@ def collision_detection(shape1, shape2):
         return True
     return False
 
-def decide_positions(face, featureGenOrder, eyeCentreCoords, noseCentreCoords, mouthCentreCoords, eyeShapes, side, noseShapes, 
-    mouthShapes, eyeSizes, noseSizes, mouthSizes, currentFeature, check, individualGenOrder, alreadyY, eyesDone, noseDone, mouthDone, positionY=0):
+def decide_positions(face, currentShape, currentSize, featureGenOrder, eyeCentreCoords, noseCentreCoords, mouthCentreCoords, eyeShapes, side, noseShapes, 
+    mouthShapes, eyeSizes, noseSizes, mouthSizes, currentFeature, check, individualGenOrder, alreadyY, eyesDone, noseDone, 
+    mouthDone, positionY=0):
     largestRadius = [12,9,13,14,12,18,10,9,13,10,9,13,11,10,15,14,14,14,10,12]
 
     #initial allowed region parameters so theyre never not defined cuz that was happening more often than id like to admit
@@ -983,10 +975,10 @@ def decide_positions(face, featureGenOrder, eyeCentreCoords, noseCentreCoords, m
         if face == True and noseDone == True and noseCentreCoords != [] and noseCentreCoords[0] != None: #the only conditions that will change the shape of the eye allowed regions
             shapeindex = noseShapes[0] # get nose shape
             size = noseSizes[0] # and its size
-            lradius = largestRadius[shapeindex]*size # calc radius of bounding box for furthest away point from centre of the nose multiplied by size mult
-            leftestPoint = math.ceil(noseCentreCoords[0][0] - lradius) #leftmost x coord of nose
-            rightestPoint = math.ceil(noseCentreCoords[0][0] + lradius) #rightmost x coord of nose
-            highestPoint = math.ceil(noseCentreCoords[0][1] - lradius) #topmost point of nose (y=0 at top left not bottom left)
+            noselradius = largestRadius[shapeindex]*size # calc radius of bounding box for furthest away point from centre of the nose multiplied by size mult
+            leftestPoint = math.ceil(noseCentreCoords[0][0] - noselradius) #leftmost x coord of nose
+            rightestPoint = math.ceil(noseCentreCoords[0][0] + noselradius) #rightmost x coord of nose
+            highestPoint = math.ceil(noseCentreCoords[0][1] - noselradius) #topmost point of nose (y=0 at top left not bottom left)
             
             if leftestPoint < leftEyeSide: #if the nose encroaches sideways into the left eye allowed region
                 leftEyeSide = leftestPoint
@@ -996,23 +988,39 @@ def decide_positions(face, featureGenOrder, eyeCentreCoords, noseCentreCoords, m
 
             if eyeBottom > highestPoint: #if the nose encroaches upwards into the eye allowed regions
                 eyeBottom = highestPoint
+                
+        leftEyeSide -= math.ceil(largestRadius[currentShape]*currentSize)
+        rightEyeSide += math.ceil(largestRadius[currentShape]*currentSize)
+        eyeBottom -= math.ceil(largestRadius[currentShape]*currentSize)
             
         if check == True: #if eye is in an allowed position
             if alreadyY == True: 
                 y = positionY #if y pos was copied from the function before this
             else:
-                y = random.randint(74,eyeBottom) #y coord the same for both allowed regions, set it first
-
+                if eyeBottom <= 74:
+                    y = 74
+                else:
+                    y = random.randint(74,eyeBottom) #y coord the same for both allowed regions, set it first
+                    
             if side == "left": #if eye in left allowed position
-                x = random.randint(68,leftEyeSide)
+                if leftEyeSide <= 68:
+                    x = 68
+                else:
+                    x = random.randint(68,leftEyeSide)
                 loopCount = 0
                 regionCheck = check_inside_left_eye_region(x,y,leftEyeSide,eyeBottom)
                 while regionCheck == False and loopCount < 100:
-                    x = random.randint(68,leftEyeSide)
+                    if leftEyeSide <= 68:
+                        x = 68
+                    else:
+                        x = random.randint(68,leftEyeSide)
                     if alreadyY == True:
                         y = positionY
                     else:
-                        y = random.randint(74,eyeBottom)
+                        if eyeBottom <= 74:
+                            y = 74
+                        else:
+                            y = random.randint(74,eyeBottom)
                     loopCount +=1
                     print("stuck in loop for ", loopCount, " iterations")
                     regionCheck = check_inside_left_eye_region(x,y,leftEyeSide,eyeBottom)
@@ -1020,15 +1028,24 @@ def decide_positions(face, featureGenOrder, eyeCentreCoords, noseCentreCoords, m
                     successful = False
             
             elif side == "right": #if eye in right allowed position
-                x = random.randint(rightEyeSide,188)
+                if rightEyeSide >= 188:
+                    x = 188
+                else:
+                    x = random.randint(rightEyeSide, 188)
                 loopCount = 0
                 regionCheck = check_inside_right_eye_region(x,y,rightEyeSide,eyeBottom)
                 while regionCheck == False and loopCount < 100:
-                    x = random.randint(rightEyeSide,188)
+                    if rightEyeSide >= 188:
+                        x = 188
+                    else:
+                        x = random.randint(rightEyeSide, 188)
                     if alreadyY == True:
                         y = positionY
                     else:
-                        y = random.randint(74,eyeBottom)
+                        if eyeBottom <= 74:
+                            y = 74
+                        else:
+                            y = random.randint(74,eyeBottom)
                     loopCount +=1
                     print("stuck in loop for ", loopCount, " iterations")
                     regionCheck = check_inside_right_eye_region(x, y, rightEyeSide, eyeBottom)
@@ -1085,15 +1102,26 @@ def decide_positions(face, featureGenOrder, eyeCentreCoords, noseCentreCoords, m
             if noseBottom > highestPoint: #if mouth encroaches in nose allowed region from the top
                 noseBottom = highestPoint
 
+        noseLeft += math.ceil(largestRadius[currentShape]*currentSize)
+        noseRight -= math.ceil(largestRadius[currentShape]*currentSize)
+        noseTop += math.ceil(largestRadius[currentShape]*currentSize)
+        noseBottom -= math.ceil(largestRadius[currentShape]*currentSize)
+        
         if check == True:
             if noseLeft < noseRight: #should never not be the case as collision is involved afterwards as well
                 x = random.randint(noseLeft,noseRight)
+            elif noseLeft == noseRight:
+                x = noseLeft
             else:
                 x = random.randint(noseRight,noseLeft)
+                
             if noseTop < noseBottom:
                 y = random.randint(noseTop,noseBottom)
+            elif noseTop == noseBottom:
+                y = noseTop
             else:
                 y = random.randint(noseBottom,noseTop) #just incase it is, in which case we're not working with a face anyway so not too fussed where the nose goes
+        
         else:
             x = random.randint(52,204)
             y = random.randint(32,224)
@@ -1110,11 +1138,16 @@ def decide_positions(face, featureGenOrder, eyeCentreCoords, noseCentreCoords, m
 
             if mouthTop < lowestPoint: #if nose encroaches into mouth allowed region
                 mouthTop = lowestPoint
+                
+        mouthTop += math.ceil(largestRadius[currentShape]*currentSize)
 
         if check == True: #if in allowed region
             x = random.randint(100,156)
             print("mouth top:", mouthTop)
-            y = random.randint(mouthTop,198)
+            if mouthTop >= 198:
+                y = 98
+            else:
+                y = random.randint(mouthTop, 198)
         
         else: #if not in allowed region
             x = random.randint(52,204)
@@ -1163,6 +1196,11 @@ for i in range (15):
     canvas.fill(white)
     face_outline(canvas)
     face = array_variable_generation()
+    if face:
+        faceString = "Face"
+    else:
+        faceString = "Not Face"
+    pygame.display.set_caption(f"{faceString} - {i}") #this is just for testing
     pygame.display.flip()
     filename = str(fileCounter)+".png"
     if face == True:
@@ -1170,7 +1208,8 @@ for i in range (15):
     else:
         filepath = os.path.join(os.getcwd(),"non_face",str(filename))
     pygame.image.save(canvas, filepath)
-    fileCounter += 1
+    fileCounter += 1  
+    time.sleep(3)
 print("done")
 
 
