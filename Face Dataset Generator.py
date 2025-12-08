@@ -736,28 +736,38 @@ def draw_shape(centreCoords, generatedShapes, shapeID, largestRadius, size, shap
     boundaryBoxSurf = pygame.Surface(boundaryBoxSurfRect.size, pygame.SRCALPHA)
     
     if shapeID == 0 or shapeID == 1: # ovals and circles
+        pygame.draw.ellipse(shapeSurf, white, shapeInfo)
         pygame.draw.ellipse(shapeSurf, black, shapeInfo, thickness)
     elif shapeID == 2 or shapeID == 3: # squares and rectangles
+        pygame.draw.rect(shapeSurf, white, shapeInfo)
         pygame.draw.rect(shapeSurf, black, shapeInfo, thickness)
     elif shapeID == 4 or shapeID == 5: # lines and longer lines
         pygame.draw.line(shapeSurf, black, shapeInfo[0:2], shapeInfo[2:4], thickness)
     elif shapeID == 6 or shapeID == 7 or shapeID == 8: # curved, deep curved and wide curved lines
         pygame.draw.arc(shapeSurf, black, shapeInfo, 0, pi, thickness)
     elif shapeID == 9 or shapeID == 10 or shapeID == 11: # semi circle, vertical and horizontal semi oval
+        pygame.draw.arc(shapeSurf, white, shapeInfo[0:4], 0, pi)
         pygame.draw.arc(shapeSurf, black, shapeInfo[0:4], 0, pi, thickness)
         pygame.draw.line(shapeSurf, black, shapeInfo[4:6], shapeInfo[6:8], thickness)
     elif shapeID == 12 or shapeID == 13 or shapeID == 14:# triangles
+        pygame.draw.polygon(shapeSurf, white, (shapeInfo[0:2], shapeInfo[2:4], shapeInfo[4:6]))
         pygame.draw.polygon(shapeSurf, black, (shapeInfo[0:2], shapeInfo[2:4], shapeInfo[4:6]), thickness)
     elif shapeID == 15 or shapeID == 16: # trapeziums
+        pygame.draw.polygon(shapeSurf, white, (shapeInfo[0:2], shapeInfo[2:4], shapeInfo[4:6], shapeInfo[6:8]))
         pygame.draw.polygon(shapeSurf, black, (shapeInfo[0:2], shapeInfo[2:4], shapeInfo[4:6], shapeInfo[6:8]), thickness)
     elif shapeID == 18:# star
+        pygame.draw.polygon(shapeSurf, white, (shapeInfo[0:2], shapeInfo[2:4], shapeInfo[4:6], shapeInfo[6:8], shapeInfo[8:10],shapeInfo[10:12], shapeInfo[12:14], shapeInfo[14:16], shapeInfo[16:18], shapeInfo[18:20]))
         pygame.draw.polygon(shapeSurf, black, (shapeInfo[0:2], shapeInfo[2:4], shapeInfo[4:6], shapeInfo[6:8], shapeInfo[8:10],shapeInfo[10:12], shapeInfo[12:14], shapeInfo[14:16], shapeInfo[16:18], shapeInfo[18:20]), thickness)
     elif shapeID == 17: # heart
+        pygame.draw.arc(shapeSurf, white, shapeInfo[0:4], (pi/4), (5*pi/4))
+        pygame.draw.arc(shapeSurf, white, shapeInfo[4:8], (7*pi/4), (3*pi/4))
+        pygame.draw.polygon(shapeSurf, white, (shapeInfo[8:10], shapeInfo[10:12], shapeInfo[12:14]))
         pygame.draw.arc(shapeSurf, black, shapeInfo[0:4], (pi/4), (5*pi/4), thickness)
         pygame.draw.arc(shapeSurf, black, shapeInfo[4:8], (7*pi/4), (3*pi/4), thickness)
         pygame.draw.line(shapeSurf, black, shapeInfo[8:10], shapeInfo[10:12], thickness)
         pygame.draw.line(shapeSurf, black, shapeInfo[12:14], shapeInfo[14:16], thickness)
     elif shapeID == 19: # spiral
+        pygame.draw.ellipse(shapeSurf, white, shapeInfo[16:20])
         pygame.draw.arc(shapeSurf, black, shapeInfo[0:4], 0, pi, thickness)
         pygame.draw.arc(shapeSurf, black, shapeInfo[4:8], pi, 2*pi, thickness)
         pygame.draw.arc(shapeSurf, black, shapeInfo[8:12], 0, pi, thickness)
