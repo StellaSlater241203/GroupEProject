@@ -1164,12 +1164,13 @@ for i in range (15):
     face_outline(canvas)
     face = array_variable_generation()
     pygame.display.flip()
-    filename = str(fileCounter)+".png"
+    time.sleep(1.5)
+    '''filename = str(fileCounter)+".png"
     if face == True:
         filepath = os.path.join(os.getcwd(),"face",str(filename))
     else:
         filepath = os.path.join(os.getcwd(),"non_face",str(filename))
-    pygame.image.save(canvas, filepath)
+    pygame.image.save(canvas, filepath)'''
     fileCounter += 1
 print("done")
 
