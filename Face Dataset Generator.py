@@ -1,6 +1,5 @@
 import tkinter
 import pygame
-from pygame import gfxdraw
 import math
 import random
 from random import shuffle
@@ -145,12 +144,12 @@ def array_variable_generation():
 
     #Step 3: Decide on the shapes of the features
     #note: these use the indexes of the shapes listed in the function, these lists are here so they can be passed into the function to decrease the amt of code i need to write
-    eyeAllowedShapes = [0,1,4,5,6,8,9] #Shapes that are allowed for the eyes no matter what shapes the other features are
-    eyeDisallowedShapes = [2,3,7,10,11,12,13,14,15,16,17,18,19] #Shapes that aren't allowed for the eyes
+    eyeAllowedShapes = [0,1,2,4,5,6,8,9] #Shapes that are allowed for the eyes no matter what shapes the other features are
+    eyeDisallowedShapes = [3,7,10,11,12,13,14,15,16,17,18,19] #Shapes that aren't allowed for the eyes
     eyeAllowedSameShapes = [[0,1],[2,3],[4,6,8],[9,11],[12],[],[]] #Shapes that are allowed for the eyes if the same/similar shapes are used for the other features (will include some crossovers!!)
     eyeDisallowedSameShapes = [[],[],[5,7],[10],[13,14],[15,16],[17,18,19]] #Shapes that aren't allowed for the eyes if same/similar shapes are used for other features
-    noseAllowedShapes = [0,1,3,4,5,6,7,9,10,12,13,15]
-    noseDisallowedShapes = [2,8,11,14,16,17,18,19]
+    noseAllowedShapes = [0,1,3,4,6,7,9,10,12,13,15]
+    noseDisallowedShapes = [2,5,8,11,14,16,17,18,19]
     noseAllowedSameShapes = [[0,1],[2,3],[4,5,6,7],[9,10],[12,13],[15],[]]
     noseDisallowedSameShapes = [[],[],[8],[11],[14],[16],[17,18,19]]
     mouthAllowedShapes = [0,1,3,5,8,9,11,16]
@@ -816,13 +815,6 @@ def draw_shape(centreCoords, generatedShapes, shapeID, largestRadius, size, shap
         generatedShapes.append(rotatedSurfListForCollision)
         return False, generatedShapes
 
-
-
-
-
-
-
-
 # ----------- Allowed Region checks to return True or False if a coordinate is inside them -------------
 
 def check_inside_face(x,y):
@@ -1203,7 +1195,7 @@ for i in range (15):
     pygame.display.set_caption(f"{faceString} - {i}") #this is just for testing
     pygame.display.flip()
     time.sleep(1.5)
-    '''filename = str(fileCounter)+".png"
+    filename = str(fileCounter)+".png"
     if face == True:
         filepath = os.path.join(os.getcwd(),"face",str(filename))
     else:
