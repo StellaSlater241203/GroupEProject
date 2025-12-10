@@ -18,7 +18,6 @@ CENTER = (128, 128)
 #Colours
 black = (0, 0, 0) 
 white = (255, 255, 255)
-green = (0, 255, 0)
 
 # Define Canvas
 canvas = pygame.display.set_mode((CANVAS_W, CANVAS_H))
@@ -27,18 +26,20 @@ canvas.fill(white)
 pygame.display.flip()
 
 
-#Pregenerated face seeds:
-    #decide how tf this is gonna work later, might be easier for this to be a function itself with all the pregen face data in it 
-
-def decide_face_type():
+def decide_face_type(fileCounter):
     FACE_PROB = 0.5
     OVERLAP_PROB = 0.1
 
-    prob = random.uniform(0.0,1.0)
+    '''prob = random.uniform(0.0,1.0)
     if prob < FACE_PROB:
         face = True
     else:
+        face = False'''
+    if fileCounter % 2 == 0:
+        face = True
+    else:
         face = False
+
     prob = random.uniform(0.0,1.0)
     if prob < OVERLAP_PROB:
         overlap = True
@@ -47,10 +48,10 @@ def decide_face_type():
 
     return(face, overlap)
 
-def array_variable_generation():
+def array_variable_generation(fileCounter):
 
     #Step 0: decide if face is true or false:
-    face, overlap = decide_face_type()
+    face, overlap = decide_face_type(fileCounter)
 
     #Step 1: Decide how many features are going to be on the face:
     totalFeatureNumber = 0 #total number of features on the face
@@ -60,11 +61,11 @@ def array_variable_generation():
     noseIDs, featureNumbers, totalFeatureNumber = generate_number_of_features(face, totalFeatureNumber, featureNumbers, 1) #run the function to determine the number of noses and their IDs
     mouthIDs, featureNumbers, totalFeatureNumber, allowedCopies = generate_number_of_features(face, totalFeatureNumber, featureNumbers, 2) #run the function to determine the number of noses and their IDs
 
-
     #Step 2: Decide which criteria these features will fulfill:
     eyeCheckVariable = 9
     noseCheckVariable = 4
     mouthCheckVariable = 4 #no. of checks in each category just incase these need checking at some point i cl i made these for a reason and then ate dinner and then forgot what the reason was so xxx
+
     EYE_CHECK_PROBS = [0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5]
     '''Probabilities to have an eye mirror/be the same as aspects of another:
     1. Size (with slight randomness), 50% chance
@@ -90,16 +91,37 @@ def array_variable_generation():
     3. Rotation, 50% chance
     4. Position, 50% chance'''
 
+    ONE_TO_FOUR_FALSE_PROB = 0.5
+    FIVE_TO_EIGHT_FALSE_PROB = 0.75 #25% after one to four is checked first
+    #therefore EIGHT_TO_?_FALSE_PROB = 1.0, 25% after one to four and five to eight are checked, should give more variability in the types of non faces
+
+    if face == False:
+        prob = random.uniform(0.0,1.0)
+        if prob < ONE_TO_FOUR_FALSE_PROB:
+            falseNumber = random.randint(1,4)
+        elif ONE_TO_FOUR_FALSE_PROB <= prob < FIVE_TO_EIGHT_FALSE_PROB:
+            falseNumber = random.randint(5,8)
+        else:
+            totalChecks = featureNumbers[0]*eyeCheckVariable + featureNumbers[1]*noseCheckVariable + featureNumbers[2]*mouthCheckVariable
+            if totalChecks == 9:
+                falseNumber = 9
+            else:
+                falseNumber = random.randint(9,totalChecks)
+
+        falseProb = falseNumber / totalFeatureNumber #so that there will hopefully be around the same number of false as the number we want, except this way they can be chosen kinda randomly.
+    else:
+        falseProb = 0 #for a face, this is never used anyway unless face is false
+
     eyeChecks = []
     noseChecks = []
     mouthChecks = [] #2D arrays that store the boolean check values for the features
 
     for ID in eyeIDs:
-        eyeChecks.append(generate_feature_criteria(EYE_CHECK_PROBS, face, 0))
+        eyeChecks.append(generate_feature_criteria(EYE_CHECK_PROBS, face, 0, falseProb))
     for ID in noseIDs:
-        noseChecks.append(generate_feature_criteria(NOSE_CHECK_PROBS, face, 1))
+        noseChecks.append(generate_feature_criteria(NOSE_CHECK_PROBS, face, 1, falseProb))
     for ID in mouthIDs:
-        mouthChecks.append(generate_feature_criteria(MOUTH_CHECK_PROBS, face, 2)) #add a check list for every feature that will be on the face
+        mouthChecks.append(generate_feature_criteria(MOUTH_CHECK_PROBS, face, 2, falseProb)) #add a check list for every feature that will be on the face
 
     #Step 2.5: Decide what order the eyes will generate in as they have attributes that can depend on eachother
     eyeGenOrder = []
@@ -140,7 +162,6 @@ def array_variable_generation():
         noseCopiesFrom.append(None)
     for i in mouthIDs:
         mouthCopiesFrom.append(None)
-
 
     #Step 3: Decide on the shapes of the features
     #note: these use the indexes of the shapes listed in the function, these lists are here so they can be passed into the function to decrease the amt of code i need to write
@@ -210,7 +231,6 @@ def array_variable_generation():
     mouthAllowedRotations = [[0], [0], [0], [0], [0], [0], [0,180], [0,180], [0,180], [0,180], [0,180], [0,180], [0,180], [0,180], [0,180], [0,180], [0,180], [0,180], [0], [0]]
     #indexes                oval circ square rec line lli  curline  dcurline wcurline scircle   vsoval   hsoval    etri     ltri     wtri    ltrap    wtrap    heart   star spiral
     #obvs some of these shapes are not allowed for these features but this still allows us to have a disallowed shape with an allowed rotation, still wont be a face, also this makes it easier for pulling into fucntions and stuff cause whatever u send in is now the same length
-    
 
     if eyeChecks != []:
         eyeRotations, eyeChecks = decide_rotation(face, eyeChecks, eyeShapes, eyeAllowedRotations, eyeGenOrder, eyeCopiesFrom, 0)
@@ -225,7 +245,11 @@ def array_variable_generation():
     eyeSides, eyeChecks = left_or_right_eye(face, eyeGenOrder, eyeCopiesFrom, eyeChecks)
     
     #Step 7, 8 and 9: decide on positions, ensure there are no interfeature collisions, and draw the final face!
-    face = draw_face(face, featureGenOrder, featureNumbers, individualGenOrder, eyeChecks, eyeCopiesFrom, eyeSides, noseChecks, mouthChecks, eyeShapes, noseShapes, mouthShapes, eyeSizes, noseSizes, mouthSizes, eyeRotations, noseRotations, mouthRotations)
+    face, eyeWasGenerated, eyeCentreCoords, noseWasGenerated, noseCentreCoords, mouthWasGenerated, mouthCentreCoords = draw_face(face, featureGenOrder, featureNumbers, individualGenOrder, eyeChecks, eyeCopiesFrom, eyeSides, noseChecks, mouthChecks, eyeShapes, noseShapes, mouthShapes, eyeSizes, noseSizes, mouthSizes, eyeRotations, noseRotations, mouthRotations)
+
+    
+
+
 
     return(face)
 #decide on pregen design would be defined and called here probably xx
@@ -234,8 +258,8 @@ def generate_number_of_features(face, totalFeatureNumber, featureNumbers, curren
     maxGenCopies = [8,5,5] #generate a maximum of 8 eyes, 5 noses and 5 mouths
     defaultGenCopies = [2,1,1] #to check whether a random copy generation has the number of copies of a face
     noNoseGenCopies = [2,0,1] #other allowed copies generation
-    NO_NOSE_GEN_PROB = 0.1
-    DEFAULT_COPIES_PROB = 0.4
+    NO_NOSE_GEN_PROB = 0.07
+    DEFAULT_COPIES_PROB = 0.5
 
     IDs = [] #temp for this call of IDs, will be turned into the featureIDs array of whatever feature is currently being generated for
 
@@ -274,10 +298,11 @@ def generate_number_of_features(face, totalFeatureNumber, featureNumbers, curren
     else:
         return(IDs, featureNumbers, totalFeatureNumber)
 
-def generate_feature_criteria (checkList, face, currentFeature): 
+def generate_feature_criteria (checkList, face, currentFeature, falseProb): 
     '''basically this function just decides whether some aspects of the features are going to be true or false, eg.
     will a nose be in its allowed position? Will an eye be the same shape as another eye? Just yes or no questions for now.
     all the checks will be stored in a 2D array, an array for every feature on the face we determined in the previous function.'''
+    
     checks = []
     if face == True:
         if currentFeature == 0:
@@ -286,15 +311,23 @@ def generate_feature_criteria (checkList, face, currentFeature):
             checks = [True, True, True, True] #same for noses
         if currentFeature == 2:
             checks = [True, True, True, True] #same for mouths
+        
+    else:
+        for i in checkList:
+            prob = random.uniform(0.0,1.0)
+            if prob < falseProb:
+                checks.append(True)
+            else:
+                checks.append(False)
 
-    else: #face = False
+    '''else: #face = False
         for i in checkList:
             prob = random.uniform(0.0,1.0)
             if prob < i:
                 checks.append(True)
             else:
-                checks.append(False) #randomly decide whether a criteria is true or false
-    
+                checks.append(False) #randomly decide whether a criteria is true or false'''
+
     return(checks)
 
 def eye_order(IDs, checks):
@@ -334,7 +367,7 @@ def eye_order(IDs, checks):
     
     return(order, copiesFrom, checks)
     #if culling of the checks needs to be done do it here! might not need to though cause the matching checks can just be done first and the rest ignored if need be
-        
+
 def decide_shapes(checks, allowedShapes, disallowedShapes, genOrder, copiesFrom, currentFeature, sameShapesID):
     shapes = ["oval", "circle", "square", "rectangle", "line", "lline" "curvedline", "dcurvedline", "wcurvedline", "semicircle", "vsemioval", "hsemioval", "etriangle", "ltriangle", "wtriangle", "ltrapezium", "wtrapezium", "heart", "star", "spiral"]
     #indexes    0        1         2           3          4       5          6             7              8             9            10            11           12          13            14           15            16         17       18       19
@@ -693,10 +726,8 @@ def draw_face(face, featureGenOrder, featureNumbers, genOrder, eyeChecks, eyeCop
     for i in mouthWasGenerated:
         if i == False:
             face = False
-                
 
-    return(face)
-
+    return(face, eyeWasGenerated, eyeCentreCoords, noseWasGenerated, noseCentreCoords, mouthWasGenerated, mouthCentreCoords) 
 
 def shape_gen_info(centreCoords, size, shape):
     coordList = [[1,1,24,12],[1,1,18,18],[1,1,18,18],[1,1,24,12],[1,1,25,1],[1,1,33,1],[1,1,18,18],[1,1,12,24],[1,1,24,12],[1,1,18,18,1,10,19,10],[1,1,12,24,1,13,13,13],
@@ -715,9 +746,6 @@ def shape_gen_info(centreCoords, size, shape):
     print(x, y, x + math.ceil(rectList[shape][0]*size), y + math.ceil(rectList[shape][1]*size), math.ceil(rectList[shape][2]*size), math.ceil(rectList[shape][3]*size))
     rectCoords = [x + math.ceil(rectList[shape][0]*size), y + math.ceil(rectList[shape][1]*size), math.ceil(rectList[shape][2]*size), math.ceil(rectList[shape][3]*size)]
     return coords, rectCoords
-
-
-
 
 def draw_shape(centreCoords, generatedShapes, shapeID, largestRadius, size, shapeInfo, rectInfo, currentFeature, rotationAngle, allowedRegionInfo = [], side = None):
     faceRect = pygame.Rect(52, 32, 152, 192) # compute bounding rectangle for the ellipse
@@ -824,9 +852,7 @@ def draw_shape(centreCoords, generatedShapes, shapeID, largestRadius, size, shap
         canvas.blit(rotatedSurf, rotatedSurf.get_rect(center = rotatedSurfRect.center))
         generatedShapes.append(rotatedSurfListForCollision)
         return False, generatedShapes
-
 # ----------- Allowed Region checks to return True or False if a coordinate is inside them -------------
-
 def check_inside_face(x,y):
     rsq = (((x-128)**2)/(76**2)) + (((y-128)**2)/(96**2))
     if rsq < 1:
@@ -883,11 +909,8 @@ def check_inside_mouth_region(x,y,ytop=132):
         return True
     else:
         return False
-
 # ---------------- END ------------------
-
 # --------------- Allowed Regions as tangible shapes on their own surfaces --------------- 
-
 def left_eye_boundary_box(xLeft = 68, xRight = 116, yTop = 74, yBottom = 122, surface = canvas):
     width = xRight - xLeft #find size of surface based on passed in size of allowed region
     height = yBottom - yTop
@@ -943,9 +966,7 @@ def mouth_boundary_box(xLeft = 84, xRight = 172, yTop = 132, yBottom = 198, surf
     
     canvas.blit(mouthSurface, mouthSurface.get_rect(center = mouthBoundaryRect.center))
     return [mouthSurface, mouthBoundaryRect]
-
 # --------------- END --------------- 
-
 def collision_detection(shape1, shape2):
     surface1, pos1 = shape1
     surface2, pos2 = shape2
@@ -1165,14 +1186,11 @@ def decide_positions(face, currentShape, currentSize, featureGenOrder, eyeCentre
     else:
         return([x,y], mouthTop, successful)
 
-
-#Draw face outline
 def face_outline(surface):
     faceRect = pygame.Rect(52, 32, 152, 192) # compute bounding rectangle for the ellipse
     faceSurface = pygame.Surface(faceRect.size, pygame.SRCALPHA)
     pygame.draw.ellipse(faceSurface, black, (0, 0, *faceRect.size), 1) # draw the ellipse outline
     surface.blit(faceSurface, faceSurface.get_rect(center = faceRect.center))
-
 
 '''def generate_batch(canvases):
     for cv in canvases:
@@ -1197,7 +1215,7 @@ fileCounter= 0
 for i in range (15):
     canvas.fill(white)
     face_outline(canvas)
-    face = array_variable_generation()
+    face = array_variable_generation(fileCounter)
     if face:
         faceString = "Face"
     else:
@@ -1215,7 +1233,6 @@ for i in range (15):
     time.sleep(3)
 print("done")
 
-
 running = True
 while running:
     for event in pygame.event.get():
@@ -1223,6 +1240,5 @@ while running:
             running = False
     
     pygame.display.flip()
-
 
 pygame.quit()
