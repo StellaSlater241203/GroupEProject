@@ -1,4 +1,3 @@
-import tkinter
 import pygame
 import math
 import random
@@ -6,8 +5,6 @@ from random import shuffle
 import os
 from math import pi
 import time
-
-'''BOUNDARY BOX NEEDS ITS SURFACE TO BE THE SAME SIZE AS IT OTHERWISE COLLISION DOESNT WORK'''
 
 pygame.init() #initialise pygame window
 
