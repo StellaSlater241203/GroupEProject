@@ -18,7 +18,6 @@ CENTER = (128, 128)
 #Colours
 black = (0, 0, 0) 
 white = (255, 255, 255)
-green = (0, 255, 0)
 
 # Define Canvas
 canvas = pygame.display.set_mode((CANVAS_W, CANVAS_H))
