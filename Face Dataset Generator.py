@@ -26,7 +26,7 @@ canvas.fill(white)
 pygame.display.flip()
 
 
-def decide_face_type(fileCounter):
+def decide_face_type(fileCounter, forcenonface):
     FACE_PROB = 0.5
     OVERLAP_PROB = 0.1
 
@@ -35,7 +35,8 @@ def decide_face_type(fileCounter):
         face = True
     else:
         face = False'''
-    if fileCounter % 2 == 0:
+    
+    if fileCounter % 2 == 0 and forcenonface == False:
         face = True
     else:
         face = False
@@ -48,10 +49,10 @@ def decide_face_type(fileCounter):
 
     return(face, overlap)
 
-def array_variable_generation(fileCounter):
+def array_variable_generation(fileCounter, forcenonface):
 
     #Step 0: decide if face is true or false:
-    face, overlap = decide_face_type(fileCounter)
+    face, overlap = decide_face_type(fileCounter, forcenonface)
 
     #Step 1: Decide how many features are going to be on the face:
     totalFeatureNumber = 0 #total number of features on the face
@@ -107,8 +108,10 @@ def array_variable_generation(fileCounter):
                 falseNumber = 9
             else:
                 falseNumber = random.randint(9,totalChecks)
-
-        falseProb = falseNumber / totalFeatureNumber #so that there will hopefully be around the same number of false as the number we want, except this way they can be chosen kinda randomly.
+        if totalFeatureNumber == 0:
+            falseProb = 0
+        else:
+            falseProb = falseNumber / totalFeatureNumber #so that there will hopefully be around the same number of false as the number we want, except this way they can be chosen kinda randomly.
     else:
         falseProb = 0 #for a face, this is never used anyway unless face is false
 
@@ -1304,27 +1307,41 @@ for i in range(1): #LITERALLY ONLY FOR TESTING, JUST TO GENERATE 1 BATCH FOR EAS
     generate_batch(canvases)
     #root.mainloop()'''
 
-fileCounter= 0
-for i in range (20000):
+fileCounter = 0
+faceCounter = 0
+nonfaceCounter = 0
+
+while nonfaceCounter <= 10000:
     canvas.fill(white)
     face_outline(canvas)
-    print("THIS IS FACE", fileCounter, "HEY LOOK IM A REALLY LONG LINE TO GET YOUR ATTENTION HEY LOOK AT ME IM HERE TO BREAK UP AL THE SHIT IVE OUTPUTTED TO THE CONSOLE")
-    face = array_variable_generation(fileCounter)
+    forcenonface = False
+    if faceCounter > 10000:
+        forcenonface = True
+
+    face = array_variable_generation(fileCounter, forcenonface)
+
     if face:
         faceString = "Face"
     else:
         faceString = "Not Face"
-    pygame.display.set_caption(f"{faceString} - {i}") #this is just for testing
+    pygame.display.set_caption(f"{faceString} - {fileCounter}") #this is just for testing
     pygame.display.flip()
-    #time.sleep(1.5)
     filename = str(fileCounter)+".png"
-    if face == True:
+
+    if face == True and faceCounter <= 10000:
         filepath = os.path.join(os.getcwd(),"face",str(filename))
-    else:
+        pygame.image.save(canvas, filepath)
+        faceCounter += 1
+        fileCounter += 1 
+
+    elif face == False and nonfaceCounter <= 10000:
         filepath = os.path.join(os.getcwd(),"non_face",str(filename))
-    pygame.image.save(canvas, filepath)
-    fileCounter += 1  
+        pygame.image.save(canvas, filepath)
+        nonfaceCounter += 1
+        fileCounter += 1
+
     #time.sleep(3)
+
 print("done")
 
 running = True
