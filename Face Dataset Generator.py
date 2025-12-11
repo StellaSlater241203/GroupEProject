@@ -1311,7 +1311,7 @@ fileCounter = 0
 faceCounter = 0
 nonfaceCounter = 0
 
-while nonfaceCounter <= 10000:
+while nonfaceCounter <= 15:
     canvas.fill(white)
     face_outline(canvas)
     forcenonface = False
@@ -1340,7 +1340,9 @@ while nonfaceCounter <= 10000:
         nonfaceCounter += 1
         fileCounter += 1
 
-    #time.sleep(3)
+    pygame.display.update()
+    
+    time.sleep(2)
 
 print("done")
 
