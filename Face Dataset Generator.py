@@ -104,7 +104,7 @@ def array_variable_generation(fileCounter):
             falseNumber = random.randint(5,8)
         else:
             totalChecks = featureNumbers[0]*eyeCheckVariable + featureNumbers[1]*noseCheckVariable + featureNumbers[2]*mouthCheckVariable
-            if totalChecks == 9:
+            if totalChecks <= 9:
                 falseNumber = 9
             else:
                 falseNumber = random.randint(9,totalChecks)
@@ -166,8 +166,8 @@ def array_variable_generation(fileCounter):
 
     #Step 3: Decide on the shapes of the features
     #note: these use the indexes of the shapes listed in the function, these lists are here so they can be passed into the function to decrease the amt of code i need to write
-    eyeAllowedShapes = [0,1,2,4,5,6,8,9] #Shapes that are allowed for the eyes no matter what shapes the other features are
-    eyeDisallowedShapes = [3,7,10,11,12,13,14,15,16,17,18,19] #Shapes that aren't allowed for the eyes
+    eyeAllowedShapes = [0,1,4,5,6,8,9] #Shapes that are allowed for the eyes no matter what shapes the other features are
+    eyeDisallowedShapes = [2,3,7,10,11,12,13,14,15,16,17,18,19] #Shapes that aren't allowed for the eyes
     eyeAllowedSameShapes = [[0,1],[2,3],[4,6,8],[9,11],[12],[],[]] #Shapes that are allowed for the eyes if the same/similar shapes are used for the other features (will include some crossovers!!)
     eyeDisallowedSameShapes = [[],[],[5,7],[10],[13,14],[15,16],[17,18,19]] #Shapes that aren't allowed for the eyes if same/similar shapes are used for other features
     noseAllowedShapes = [0,1,3,4,6,7,9,10,12,13,15]
@@ -234,11 +234,11 @@ def array_variable_generation(fileCounter):
     #obvs some of these shapes are not allowed for these features but this still allows us to have a disallowed shape with an allowed rotation, still wont be a face, also this makes it easier for pulling into fucntions and stuff cause whatever u send in is now the same length
 
     if eyeChecks != []:
-        eyeRotations, eyeChecks, rotFluctuation = decide_rotation(face, eyeChecks, eyeShapes, eyeAllowedRotations, eyeGenOrder, eyeCopiesFrom, 0)
+        eyeRotations, eyeChecks = decide_rotation(face, eyeChecks, eyeShapes, eyeAllowedRotations, eyeGenOrder, eyeCopiesFrom, 0)
     if noseChecks != []:
-        noseRotations, noseChecks, rotFluctuation= decide_rotation(face, noseChecks, noseShapes, noseAllowedRotations, noseIDs, noseCopiesFrom, 1)
+        noseRotations, noseChecks = decide_rotation(face, noseChecks, noseShapes, noseAllowedRotations, noseIDs, noseCopiesFrom, 1)
     if mouthChecks != []:
-        mouthRotations, mouthChecks, rotFluctuation = decide_rotation(face, mouthChecks, mouthShapes, mouthAllowedRotations, mouthIDs, mouthCopiesFrom, 2)
+        mouthRotations, mouthChecks = decide_rotation(face, mouthChecks, mouthShapes, mouthAllowedRotations, mouthIDs, mouthCopiesFrom, 2)
 
     #Step 6: decide on the generation order, sort this into a masterlist of the order every single feature is generated individually
     featureGenOrder, individualGenOrder = generation_order(featureNumbers, eyeGenOrder, noseIDs, mouthIDs)
@@ -246,138 +246,105 @@ def array_variable_generation(fileCounter):
     eyeSides, eyeChecks = left_or_right_eye(face, eyeGenOrder, eyeCopiesFrom, eyeChecks)
     
     #Step 7, 8 and 9: decide on positions, ensure there are no interfeature collisions, and draw the final face!
-    face, eyeWasGenerated, eyeCentreCoords, noseWasGenerated, noseCentreCoords, mouthWasGenerated, mouthCentreCoords, relevantCheckCoords, positionFluctuation = draw_face(face, featureGenOrder, featureNumbers, individualGenOrder, eyeChecks, eyeCopiesFrom, eyeSides, noseChecks, mouthChecks, eyeShapes, noseShapes, mouthShapes, eyeSizes, noseSizes, mouthSizes, eyeRotations, noseRotations, mouthRotations)
-    print("long list of shit:", face, eyeWasGenerated, eyeCentreCoords, noseWasGenerated, noseCentreCoords, mouthWasGenerated, mouthCentreCoords, relevantCheckCoords, positionFluctuation)
-    print("rel:", relevantCheckCoords)
-    print("ECC:", eyeCentreCoords)
-    print("ES:", eyeSides)
-    
-    
+    face, eyeWasGenerated, eyeCentreCoords, noseWasGenerated, noseCentreCoords, mouthWasGenerated, mouthCentreCoords, positionFluctuation = draw_face(face, featureGenOrder, featureNumbers, individualGenOrder, eyeChecks, eyeCopiesFrom, eyeSides, noseChecks, mouthChecks, eyeShapes, noseShapes, mouthShapes, eyeSizes, noseSizes, mouthSizes, eyeRotations, noseRotations, mouthRotations)
+
+    genEyeIndexes = []
+    genNoseIndexes = []
+    genMouthIndexes = []
+
     numGeneratedEyes = 0
+    counter = 0
     for eye in eyeWasGenerated:
         if eye == True:
-            numGeneratedEyes += 1
+            genEyeIndexes.append(counter)
+            #numGeneratedEyes += 1
+        counter += 1
             
+    counter = 0
     numGeneratedNoses = 0
     for nose in noseWasGenerated:
         if nose == True:
-            numGeneratedNoses += 1
-            
+            genNoseIndexes.append(counter)
+            #numGeneratedNoses += 1
+        counter += 1
+
+    counter = 0
     numGeneratedMouths = 0
     for mouth in mouthWasGenerated:
         if mouth == True:
-            numGeneratedMouths += 1
+            genMouthIndexes.append(counter)
+            #numGeneratedMouths += 1
+        counter += 1
             
-    if len(individualGenOrder) == 4 and featureNumbers == [2, 1, 1]: # if 4 features, being 2 eyes, 1 nose and 1 mouth
-        print("this face has the right number of features (:")
-        print("FGO:", featureGenOrder)
-        for currentFeature in featureGenOrder:
-            print(currentFeature)
-            if currentFeature == 0: #eye
-                #print(eyeChecks)
-                print("EGO", eyeGenOrder)
-                if eyeGenOrder[0] == 0 : # if first eye
-                    if eyeSides[0] == "left": # if left eye
-                        for boundaryCoords in relevantCheckCoords:
-                            if len(boundaryCoords) == 3: 
-                                if check_inside_left_eye_region(eyeCentreCoords[0][0], eyeCentreCoords[0][1], boundaryCoords[0], boundaryCoords[2]) == False:
-                                    print("THIS IS NOT A FACE BECAUSE CHECK LEFT EYE REGION WAS", check_inside_left_eye_region(eyeCentreCoords[0][0], eyeCentreCoords[0][1], boundaryCoords[0], boundaryCoords[2]))
-                                    print(eyeCentreCoords)
-                                    print("SETTING FACE TO FALSE")
-                                    face = False
-                                break
-                    else: # right eye
-                        for boundaryCoords in relevantCheckCoords:
-                            if len(boundaryCoords) == 3: 
-                                print(check_inside_right_eye_region)
-                                if check_inside_right_eye_region(eyeCentreCoords[0][0], eyeCentreCoords[0][1], boundaryCoords[1], boundaryCoords[2]) == False:
-                                    face = False
-                                    print("THIS IS NOT A FACE BECAUSE CHECK right EYE REGION WAS", check_inside_right_eye_region(eyeCentreCoords[0][0], eyeCentreCoords[0][1], boundaryCoords[1], boundaryCoords[2]))
-                                    print(eyeCentreCoords)
-                                    print("SETTING FACE TO FALSE")
-                                break
-                    shape = eyeShapes[0]
-                    print("EAR:", eyeAllowedRotations[shape])
-                    print("ER:", eyeRotations)
-                    eyeAllowedRot = []
-                    for eyeAllowedRotation in eyeAllowedRotations[shape]:
-                            if eyeAllowedRotation == 0:
-                                eyeAllowedRot.append([355, 0, 5])
+    if len(genEyeIndexes) == 2 and len(genMouthIndexes) == 1 and len(genNoseIndexes) <= 1 and face == False: #if the right number of features generated for a face accidentally and the face is false
+        #dealing with eyes first
+        eye1index = genEyeIndexes[0]
+        eye2index = genEyeIndexes[1]
+        if eyeSides[eye1index] == "left" and eyeSides[eye2index] == "right" or eyeSides[eye1index] == "right" and eyeSides[eye2index] == "left": #eyes in opposite allowed regions
+            if (eyeCentreCoords[eye1index][1] - positionFluctuation) <= eyeCentreCoords[eye2index][1] <= (eyeCentreCoords[eye1index][1] + positionFluctuation): #y values of eyes in fluctuation range of eachother
+                if eyeShapes[eye1index] == eyeShapes[eye2index] and eyeShapes[eye1index] in eyeAllowedShapes: #if shapes are same and theyre both allowed
+                    rotFluctuation = 5
+                    straddleszero = False
+                    mirrorstraddleszero = False
+                    anticlockwise = eyeRotations[eye1index] - rotFluctuation
+                    if anticlockwise < 0:
+                        anticlockwise += 360
+                        straddleszero = True
+                    mirroranticlockwise = (eyeRotations[eye1index]-360) - rotFluctuation
+                    if mirroranticlockwise < 0:
+                        mirroranticlockwise += 360
+                        mirrorstraddleszero = True
+                    clockwise = eyeRotations[eye1index] + rotFluctuation
+                    if clockwise >= 360:
+                        clockwise -= 360
+                        straddleszero = True
+                    mirrorclockwise = (eyeRotations[eye1index]-360) + rotFluctuation
+                    if mirrorclockwise >= 360:
+                        mirrorclockwise -= 360
+                        mirrorstraddleszero = True
+                    if straddleszero == True and anticlockwise <= eyeRotations[eye2index] or straddleszero == True and clockwise >= eyeRotations[eye2index] or straddleszero == False and anticlockwise <= eyeRotations[eye2index] <= clockwise or mirrorstraddleszero == True and mirroranticlockwise <= eyeRotations[eye2index] or mirrorstraddleszero == True and mirrorclockwise >= eyeRotations[eye2index] or mirrorstraddleszero == False and mirroranticlockwise <= eyeRotations[eye2index] <= mirrorclockwise:
+                        eyeAllowedRot = []
+                        rotFluctuation = 10
+                        for eyeAllowedRotation in eyeAllowedRotations[eyeShapes[eye1index]]: #finds every allowed rotation for the eye shape
+                                if eyeAllowedRotation == 0:
+                                    eyeAllowedRot.append([350, 0, 10])
+                                else:
+                                    anticlockwise = eyeAllowedRotation - rotFluctuation
+                                    clockwise = eyeAllowedRotation + rotFluctuation
+                                    eyeAllowedRot.append([anticlockwise, eyeAllowedRotation, clockwise])
+                        eyeAllowedRotBool = False
+                        for allowedRots in eyeAllowedRot:
+                            if allowedRots[1] == 0:
+                                if allowedRots[0] <= eyeRotations[eye1index] or eyeRotations[0] <= allowedRots[2]:
+                                    eyeAllowedRotBool = True
                             else:
-                                anticlockwise = eyeAllowedRotation - rotFluctuation
-                                clockwise = eyeAllowedRotation + rotFluctuation
-                                eyeAllowedRot.append([anticlockwise, eyeAllowedRotation, clockwise])
-                    print("eye allowed rot ranges = ", eyeAllowedRot)
-                    for allowedRots in eyeAllowedRot:
-                        if allowedRots[1] == 0:
-                            if allowedRots[0] <= eyeRotations[0] < 360 or 0 <= eyeRotations[0] <= allowedRots[2]:
-                                print("This eye is in an allowed rotation")
-                                break
+                                if allowedRots[0] <= eyeRotations[eye1index] <= allowedRots[2]:
+                                    eyeAllowedRotBool = True
+                        if eyeAllowedRotBool == True:
+                            sizefluc = 0.05
+                            if eyeSizes[eye1index]-sizefluc <= eyeSizes[eye2index] <= eyeSizes[eye1index]+sizefluc:
+                                if eyeAllowedSizes[0]-sizefluc <= eyeSizes[eye1index] <= eyeAllowedSizes[1]+sizefluc:
+                                    if mouthChecks[genMouthIndexes[0]] == [True,True,True,True]:
+                                        if len(genNoseIndexes) == 1 and noseChecks[genNoseIndexes[0]] == [True,True,True,True] or len(genNoseIndexes) == 0:
+                                            face = True
+                                        else:
+                                            face = False
+                                    else:
+                                        face = False
+                                else:
+                                    face = False
                             else:
-                                print("This eye is NOT in an allowed rotation")
-                                print("SETTING FACE TO FALSE 1")
                                 face = False
                         else:
-                            if allowedRots[0] <= eyeRotations[0] <= allowedRots[2]:
-                                print("This eye is in an allowed rotation")
-                                print("SETTING FACE BACK TO TRUE")
-                                face = True
-                                break
-                            else:
-                                print("This eye is NOT in an allowed rotation")
-                                print("SETTING FACE TO FALSE 2")
-                                face = False
-                    print("First Eye Deemed The Output:", face)
-                else: # second eye to be genned
-                    print("second eye start")
-                    if eyeChecks[1][4] == True: # if position mirrored
-                        print(eyeCentreCoords[0], eyeCentreCoords[1])
-                        print("hello")
-                        if eyeSides == "left": # if left eye
-                            leftSideX = 68 + (188 - eyeCentreCoords[0][0])
-                            if (leftSideX - positionFluctuation) <= eyeCentreCoords[1][0] <= (leftSideX + positionFluctuation):
-                                print("eyes are basically same x value")
-                                face = True
-                            else:
-                                print("setting face to false because the eyes should have similar x coord and they do not (left)")
-                                face = False
-                        else: # right eye
-                            rightSideX = (eyeCentreCoords[0][0] - 68) - 188
-                            if (rightSideX - positionFluctuation) <= eyeCentreCoords[1][0] <= (rightSideX + positionFluctuation):
-                                print("eyes are basically same x value")
-                                face = True
-                            else:
-                                print("setting face to false because the eyes should have similar x coord and they do not (left)")
-                                face = False
+                            face = False
                     else:
-                        if eyeSides[0] == "left": # if left eye
-                            for boundaryCoords in relevantCheckCoords:
-                                if len(boundaryCoords) == 3: 
-                                    if check_inside_left_eye_region(eyeCentreCoords[0][0], eyeCentreCoords[0][1], boundaryCoords[0], boundaryCoords[2]) == False:
-                                        print("THIS IS NOT A FACE BECAUSE CHECK LEFT EYE REGION WAS", check_inside_left_eye_region(eyeCentreCoords[0][0], eyeCentreCoords[0][1], boundaryCoords[0], boundaryCoords[2]))
-                                        print(eyeCentreCoords)
-                                        print("SETTING FACE TO FALSE")
-                                        face = False
-                                    break
-                        else: # right eye
-                            for boundaryCoords in relevantCheckCoords:
-                                if len(boundaryCoords) == 3: 
-                                    if check_inside_right_eye_region(eyeCentreCoords[0][0], boundaryCoords[1], boundaryCoords[2]) == False:
-                                        face = False
-                                        print("THIS IS NOT A FACE BECAUSE CHECK right EYE REGION WAS", check_inside_right_eye_region(eyeCentreCoords[0][0], eyeCentreCoords[0][1], boundaryCoords[1], boundaryCoords[2]))
-                                        print(eyeCentreCoords)
-                                        print("SETTING FACE TO FALSE")
-                                    break
-                    if eyeChecks[1][3] == True: # 
-                        
-    
-    
-    elif len(individualGenOrder) == 3:
-        print("no nose face")
-    else:
-        face = False
-
-
+                        face = False
+                else:
+                    face = False
+            else:
+                face = False
+        else:
+            face = False
 
     return(face)
 #decide on pregen design would be defined and called here probably xx
@@ -713,7 +680,7 @@ def decide_rotation(face, checks, shapes, allowedRotations, genOrder, copiesFrom
                 rotation = random.randint(disallowedRotationsLow[index], disallowedRotationsUp[index]) #any angle in the disallowed regions
             rotationList[i] = rotation
 
-    return(rotationList, checks, fluctuation)
+    return(rotationList, checks)
 
 def generation_order(featureNumbers, eyeGen, noseGen, mouthGen): #to randomise the order of which the feautures are generated, to make sure every face that has loads of eyes isnt filled up with only eyes, as nothing has space to generate after them. Thought it might introduce a bit more of a spread
     featureIDs = [0,1,2]
@@ -811,7 +778,6 @@ def draw_face(face, featureGenOrder, featureNumbers, genOrder, eyeChecks, eyeCop
                 eyesDone = True #technically runs when the first eye is done but nothing else will run from here until all the eyes are done anyway, and this variable doesnt matter while the eyes are running
                 if eyeSuccess == False:
                     eyeWasGenerated[feature[0]] = False
-                relevantCheckCoords.append([leftEyeRegionSide, rightEyeRegionSide, eyeRegionBottom])
             elif feature[1] == 1:
                 noseCentreCoords[feature[0]], noseRegionLeft, noseRegionRight, noseRegionTop, noseRegionBottom, noseSuccess = decide_positions(face, noseShapes[feature[0]], noseSizes[feature[0]], featureGenOrder, eyeCentreCoords, noseCentreCoords, mouthCentreCoords, eyeShapes, "", noseShapes, mouthShapes, eyeSizes, noseSizes, mouthSizes, 1, noseChecks[feature[0]][3], genOrder, False, eyesDone, noseDone, mouthDone)
                 shapeInfo, rectInfo = shape_gen_info(noseCentreCoords[feature[0]], noseSizes[feature[0]], noseShapes[feature[0]])
@@ -820,17 +786,13 @@ def draw_face(face, featureGenOrder, featureNumbers, genOrder, eyeChecks, eyeCop
                 noseDone = True
                 if noseSuccess == False:
                     noseWasGenerated[feature[0]] = False
-                relevantCheckCoords.append([noseRegionLeft, noseRegionRight, noseRegionTop, noseRegionBottom])
             else: 
                 mouthCentreCoords[feature[0]], mouthRegionTop, mouthSuccess = decide_positions(face, mouthShapes[feature[0]], mouthSizes[feature[0]], featureGenOrder, eyeCentreCoords, noseCentreCoords, mouthCentreCoords, eyeShapes, "", noseShapes, mouthShapes, eyeSizes, noseSizes, mouthSizes, 2, mouthChecks[feature[0]][3], genOrder, False, eyesDone, noseDone, mouthDone)
                 shapeInfo, rectInfo = shape_gen_info(mouthCentreCoords[feature[0]], mouthSizes[feature[0]], mouthShapes[feature[0]])
-                collision, generatedShapes = draw_shape(mouthCentreCoords[feature[0]], generatedShapes, mouthShapes[feature[0]], 
-                                                        largestRadius[mouthShapes[feature[0]]], mouthSizes[feature[0]], shapeInfo, rectInfo, 
-                                                        2, mouthRotations[feature[0]], [mouthRegionTop])
+                collision, generatedShapes = draw_shape(mouthCentreCoords[feature[0]], generatedShapes, mouthShapes[feature[0]], largestRadius[mouthShapes[feature[0]]], mouthSizes[feature[0]], shapeInfo, rectInfo, 2, mouthRotations[feature[0]], [mouthRegionTop])
                 mouthDone = True
                 if mouthSuccess == False:
                     mouthWasGenerated[feature[0]] = False
-                relevantCheckCoords.append([mouthRegionTop])
 
             tries += 1
 
@@ -859,7 +821,7 @@ def draw_face(face, featureGenOrder, featureNumbers, genOrder, eyeChecks, eyeCop
         if i == False:
             face = False
 
-    return face, eyeWasGenerated, eyeCentreCoords, noseWasGenerated, noseCentreCoords, mouthWasGenerated, mouthCentreCoords, relevantCheckCoords, fluctuation
+    return face, eyeWasGenerated, eyeCentreCoords, noseWasGenerated, noseCentreCoords, mouthWasGenerated, mouthCentreCoords, fluctuation
 
 def shape_gen_info(centreCoords, size, shape):
     coordList = [[1,1,24,12],[1,1,18,18],[1,1,18,18],[1,1,24,12],[1,1,25,1],[1,1,33,1],[1,1,18,18],[1,1,12,24],[1,1,24,12],[1,1,18,18,1,10,19,10],[1,1,12,24,1,13,13,13],
@@ -1033,7 +995,7 @@ def check_inside_nose_region(x,y,xleft=100,xright=156,ytop=96,ybot=146):
 def check_inside_mouth_region(x,y,ytop=132): 
     xok = False
     yok = False
-    if 100<x<156:
+    if 110<x<146:
         xok = True
     if ytop<y<198:
         yok = True
@@ -1297,7 +1259,7 @@ def decide_positions(face, currentShape, currentSize, featureGenOrder, eyeCentre
         mouthTop += math.ceil(largestRadius[currentShape]*currentSize)
 
         if check == True: #if in allowed region
-            x = random.randint(100,156)
+            x = random.randint(110,146)
             print("mouth top:", mouthTop)
             if mouthTop >= 198:
                 y = 98
@@ -1344,7 +1306,7 @@ for i in range(1): #LITERALLY ONLY FOR TESTING, JUST TO GENERATE 1 BATCH FOR EAS
     #root.mainloop()'''
 
 fileCounter= 0
-for i in range (15):
+for i in range (20000):
     canvas.fill(white)
     face_outline(canvas)
     print("THIS IS FACE", fileCounter, "HEY LOOK IM A REALLY LONG LINE TO GET YOUR ATTENTION HEY LOOK AT ME IM HERE TO BREAK UP AL THE SHIT IVE OUTPUTTED TO THE CONSOLE")
@@ -1355,7 +1317,7 @@ for i in range (15):
         faceString = "Not Face"
     pygame.display.set_caption(f"{faceString} - {i}") #this is just for testing
     pygame.display.flip()
-    time.sleep(1.5)
+    #time.sleep(1.5)
     filename = str(fileCounter)+".png"
     if face == True:
         filepath = os.path.join(os.getcwd(),"face",str(filename))
@@ -1363,7 +1325,7 @@ for i in range (15):
         filepath = os.path.join(os.getcwd(),"non_face",str(filename))
     pygame.image.save(canvas, filepath)
     fileCounter += 1  
-    time.sleep(3)
+    #time.sleep(3)
 print("done")
 
 running = True
