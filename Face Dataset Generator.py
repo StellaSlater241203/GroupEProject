@@ -1014,9 +1014,9 @@ def left_eye_boundary_box(xLeft = 68, xRight = 116, yTop = 74, yBottom = 122, su
     lEyeBoundaryRect = pygame.Rect(xLeft - 1, yTop - 1, width+2, height+2) #create a rectangle big enough to encompass boundary box
     lEyeSurface = pygame.Surface(lEyeBoundaryRect.size, pygame.SRCALPHA) #create a surface with the size of the rectangle
 
-    pygame.draw.line(lEyeSurface, green, (1, height-1), (width+1, height+1), 1)  # horizontal line
-    pygame.draw.line(lEyeSurface, green, (width+1, height+1), (width+1, 1), 1) # vertical line
-    pygame.draw.arc(lEyeSurface, green, (1, 1, 2*(48), 2*(48)), math.pi/2, math.pi, 1) # arc
+    pygame.draw.line(lEyeSurface, black, (1, height-1), (width+1, height+1), 1)  # horizontal line
+    pygame.draw.line(lEyeSurface, black, (width+1, height+1), (width+1, 1), 1) # vertical line
+    pygame.draw.arc(lEyeSurface, black, (1, 1, 2*(48), 2*(48)), math.pi/2, math.pi, 1) # arc
 
     canvas.blit(lEyeSurface, lEyeSurface.get_rect(center = lEyeBoundaryRect.center))
     return [lEyeSurface, lEyeBoundaryRect]
@@ -1028,9 +1028,9 @@ def right_eye_boundary_box(xLeft = 140, xRight = 188, yTop = 74, yBottom = 122, 
     rEyeBoundaryRect = pygame.Rect(xLeft - 1, yTop - 1, width+2, height+2) #create a rectangle big enough to encompass boundary box
     rEyeSurface = pygame.Surface(rEyeBoundaryRect.size, pygame.SRCALPHA) #create a surface with the size of the rectangle
     
-    pygame.draw.line(rEyeSurface, green, (1, height+1), (width+1, height+1), 1)  # horizontal line
-    pygame.draw.line(rEyeSurface, green, (1, height+1), (1, 1), 1) # vertical line
-    pygame.draw.arc(rEyeSurface, green, (-47, 1, 2*(48), 2*(48)), math.pi, (math.pi/2), 1) # arc
+    pygame.draw.line(rEyeSurface, black, (1, height+1), (width+1, height+1), 1)  # horizontal line
+    pygame.draw.line(rEyeSurface, black, (1, height+1), (1, 1), 1) # vertical line
+    pygame.draw.arc(rEyeSurface, black, (-47, 1, 2*(48), 2*(48)), math.pi, (math.pi/2), 1) # arc
     
     canvas.blit(rEyeSurface, rEyeSurface.get_rect(center = rEyeBoundaryRect.center))
     return [rEyeSurface, rEyeBoundaryRect]
@@ -1046,7 +1046,7 @@ def nose_boundary_box(xLeft = 100, xRight = 156, yTop = 96, yBottom = 146, surfa
     noseBoundaryRect = pygame.Rect(xLeft, yTop, width, height)
     noseSurface = pygame.Surface(noseBoundaryRect.size, pygame.SRCALPHA)
     
-    pygame.draw.rect(noseSurface, green, (0, 0, width, height), 1)
+    pygame.draw.rect(noseSurface, black, (0, 0, width, height), 1)
     
     canvas.blit(noseSurface, noseSurface.get_rect(center = noseBoundaryRect.center))
     return [noseSurface, noseBoundaryRect]
@@ -1058,7 +1058,7 @@ def mouth_boundary_box(xLeft = 84, xRight = 172, yTop = 132, yBottom = 198, surf
     mouthBoundaryRect = pygame.Rect(xLeft, yTop, width, height)
     mouthSurface = pygame.Surface(mouthBoundaryRect.size, pygame.SRCALPHA)
     
-    pygame.draw.rect(mouthSurface, green, (0, 0, width, height), 1)
+    pygame.draw.rect(mouthSurface, black, (0, 0, width, height), 1)
     
     canvas.blit(mouthSurface, mouthSurface.get_rect(center = mouthBoundaryRect.center))
     return [mouthSurface, mouthBoundaryRect]
